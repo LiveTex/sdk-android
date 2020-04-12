@@ -4,7 +4,6 @@ import android.app.Application;
 
 import ru.livetex.sdk.LiveTex;
 
-
 public class App extends Application {
 
 	@Override
@@ -12,6 +11,6 @@ public class App extends Application {
 		super.onCreate();
 
 		// init LiveTex
-		new LiveTex.Builder().build();
+		new LiveTex.Builder(Const.TOUCHPOINT).build();
 	}
 }

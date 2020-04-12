@@ -1,22 +1,25 @@
-package ru.livetex.sdk.network;
+package ru.livetex.sdk.network.websocket;
 
 import android.util.Log;
 
+import io.reactivex.subjects.PublishSubject;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
+import ru.livetex.sdk.logic.LiveTexMessageHandler;
 
 // todo: interface or base class
+// todo: logging flag
 public class LiveTexWebsocketListener extends WebSocketListener {
 
-	private static final String TAG = "LiveTexWebsocketListener";
-	private final LiveTexMessageProcessor messageProcessor;
+	private static final String TAG = "LTWebsocketListener";
+	private final LiveTexMessageHandler messageHandler;
+	private final PublishSubject<WebSocket> disconnectEvent = PublishSubject.create();
 
-	public LiveTexWebsocketListener(LiveTexMessageProcessor messageProcessor) {
-		this.messageProcessor = messageProcessor;
+	public LiveTexWebsocketListener(LiveTexMessageHandler messageHandler) {
+		this.messageHandler = messageHandler;
 	}
-	// todo: logging flag
 
 	@Override
 	public void onOpen(WebSocket webSocket, Response response) {
@@ -25,12 +28,12 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 
 	@Override
 	public void onMessage(WebSocket webSocket, String text) {
-		messageProcessor.onMessage(text);
+		messageHandler.onMessage(text);
 	}
 
 	@Override
 	public void onMessage(WebSocket webSocket, ByteString bytes) {
-		messageProcessor.onDataMessage(bytes);
+		messageHandler.onDataMessage(bytes);
 	}
 
 	@Override
@@ -41,5 +44,10 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 	@Override
 	public void onClosed(WebSocket webSocket, int code, String reason) {
 		Log.i(TAG, "closed with reason " + reason);
+		disconnectEvent.onNext(webSocket);
+	}
+
+	public PublishSubject<WebSocket> disconnectEvent() {
+		return disconnectEvent;
 	}
 }
