@@ -10,7 +10,7 @@ import okio.ByteString;
 // todo: interface or base class
 public class LiveTexWebsocketListener extends WebSocketListener {
 
-	private static final String TAG = "";
+	private static final String TAG = "LiveTexWebsocketListener";
 	private final LiveTexMessageProcessor messageProcessor;
 
 	public LiveTexWebsocketListener(LiveTexMessageProcessor messageProcessor) {

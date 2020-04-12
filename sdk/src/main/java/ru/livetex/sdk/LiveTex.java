@@ -20,7 +20,7 @@ public final class LiveTex {
 
 	// todo: setup here variables and controllers classes
 	public static class Builder {
-		Builder() {
+		public Builder() {
 
 		}
 

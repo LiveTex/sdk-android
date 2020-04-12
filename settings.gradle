@@ -1,2 +1,3 @@
 rootProject.name='LiveTexSDK'
 include ':sdk'
+include ':demo'
