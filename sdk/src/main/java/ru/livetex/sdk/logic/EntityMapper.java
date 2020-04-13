@@ -11,7 +11,6 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 
 import ru.livetex.sdk.entity.BaseEntity;
 import ru.livetex.sdk.entity.Department;
@@ -27,9 +26,8 @@ public class EntityMapper {
 			.registerTypeAdapter(BaseEntity.class, new MyTypeModelDeserializer())
 			.create();
 
-	public <T extends BaseEntity> T toEntity(String jsonStr) {
-		Type collectionType = new TypeToken<T>(){}.getType();
-		return gson.fromJson(jsonStr, collectionType);
+	public BaseEntity toEntity(String jsonStr) {
+		return gson.fromJson(jsonStr, BaseEntity.class);
 	}
 
 	static class MyTypeModelDeserializer implements JsonDeserializer<BaseEntity> {

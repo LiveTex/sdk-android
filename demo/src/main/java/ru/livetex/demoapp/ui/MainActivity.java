@@ -10,6 +10,7 @@ import androidx.appcompat.widget.Toolbar;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import ru.livetex.demoapp.Const;
@@ -18,6 +19,7 @@ import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.logic.LiveTexMessageHandler;
 import ru.livetex.sdk.network.AuthConnectionListener;
+import ru.livetex.sdk.network.NetworkManager;
 
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
@@ -37,7 +39,40 @@ public class MainActivity extends AppCompatActivity {
 
 		toolbarView = findViewById(R.id.toolbarView);
 
+		subscribe();
 		connect();
+	}
+
+	private void subscribe() {
+		disposables.add(NetworkManager.getInstance().connectionState()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::onConnectionStateUpdate, thr -> {
+					Log.e(TAG, "", thr);
+				}));
+
+		disposables.add(messageHandler.dialogStateUpdate()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::updateDialogState, thr -> {
+					Log.e(TAG, "", thr);
+				}));
+	}
+
+	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {
+		switch (connectionState) {
+			case DISCONNECTED:
+				break;
+			case CONNECTING:
+				break;
+			case CONNECTED: {
+				Disposable d = LiveTex.getInstance().getMessageHandler().sendTextEvent("123")
+						.subscribeOn(Schedulers.io())
+						.observeOn(AndroidSchedulers.mainThread())
+						.subscribe(resp -> {
+							Log.i(TAG, resp.toString());
+						}, thr -> Log.e(TAG, "", thr));
+				break;
+			}
+		}
 	}
 
 	@Override
@@ -58,14 +93,14 @@ public class MainActivity extends AppCompatActivity {
 				.subscribe(Functions.EMPTY_ACTION, e -> {
 					Log.e(TAG, "", e);
 				}));
-
-		disposables.add(messageHandler.dialogStateUpdate()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::updateDialogState, thr -> { Log.e(TAG, "", thr);}));
 	}
 
 	private void updateDialogState(DialogState dialogState) {
-		toolbarView.setTitle(dialogState.employee.name);
+		if (dialogState.employee != null) {
+			toolbarView.setTitle(dialogState.employee.name);
+		} else {
+			toolbarView.setTitle("");
+		}
 
 		switch (dialogState.status) {
 			case UNASSIGNED:
@@ -87,8 +122,6 @@ public class MainActivity extends AppCompatActivity {
 		@Override
 		public void onAuthSuccess(String clientId) {
 			sp.edit().putString(Const.KEY_CLIENTID, clientId).apply();
-
-			LiveTex.getInstance().getMessageHandler().sendTextEvent("123");
 		}
 
 		@Override

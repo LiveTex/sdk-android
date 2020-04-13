@@ -13,7 +13,7 @@ public final class SentMessage extends BaseEntity {
 		return TYPE;
 	}
 
-	public class SentMessageBody {
+	public static class SentMessageBody {
 		public String createdAt; // todo: date
 		public String id;
 	}

@@ -8,8 +8,10 @@ import java.io.IOException;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
+import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.BehaviorSubject;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.WebSocket;
@@ -27,8 +29,15 @@ public final class NetworkManager {
 	private final LiveTexWebsocketListener websocketListener;
 	private final CompositeDisposable disposables = new CompositeDisposable();
 
+	public enum ConnectionState {
+		DISCONNECTED,
+		CONNECTING,
+		CONNECTED
+	}
+
 	@Nullable
 	private WebSocket webSocket = null;
+	private BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.DISCONNECTED);
 	@NonNull
 	private final String touchpoint;
 	@Nullable
@@ -57,6 +66,10 @@ public final class NetworkManager {
 		return instance;
 	}
 
+	public Observable<ConnectionState> connectionState() {
+		return connectionStateSubject;
+	}
+
 	// todo: rx
 	@WorkerThread
 	public void connect(@Nullable String clientId,
@@ -75,6 +88,7 @@ public final class NetworkManager {
 			Log.e(TAG, "connect: websocket is active!");
 			return;
 		}
+		connectionStateSubject.onNext(ConnectionState.CONNECTING);
 
 		String url = HOST_WS.replace("{clientId}", clientId);
 
@@ -83,12 +97,15 @@ public final class NetworkManager {
 				.build();
 		webSocket = okHttpManager.webSocketConnection(request, websocketListener);
 
+		connectionStateSubject.onNext(ConnectionState.CONNECTED);
+
 		disposables.add(websocketListener.disconnectEvent()
 				.observeOn(Schedulers.io())
 				.subscribe(ws -> {
 					if (ws == webSocket) {
 						webSocket = null;
 						disposables.clear();
+						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
 						// todo: reconnect if need
 					}
 				}, thr -> Log.e(TAG, "", thr)));
@@ -124,6 +141,7 @@ public final class NetworkManager {
 	public void disconnect() {
 		if (webSocket != null) {
 			webSocket.close(1000, "disconnect requested");
+			connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
 			webSocket = null;
 		}
 		disposables.clear();
