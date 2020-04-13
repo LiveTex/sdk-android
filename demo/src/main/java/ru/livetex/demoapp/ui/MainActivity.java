@@ -87,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
 		@Override
 		public void onAuthSuccess(String clientId) {
 			sp.edit().putString(Const.KEY_CLIENTID, clientId).apply();
+
+			LiveTex.getInstance().getMessageHandler().sendTextEvent("123");
 		}
 
 		@Override

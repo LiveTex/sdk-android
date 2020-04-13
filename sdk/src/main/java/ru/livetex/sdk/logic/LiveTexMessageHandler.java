@@ -6,6 +6,9 @@ import io.reactivex.subjects.PublishSubject;
 import okio.ByteString;
 import ru.livetex.sdk.entity.BaseEntity;
 import ru.livetex.sdk.entity.DialogState;
+import ru.livetex.sdk.entity.TextMessage;
+import ru.livetex.sdk.entity.TypingEvent;
+import ru.livetex.sdk.network.NetworkManager;
 
 // todo: interface
 public class LiveTexMessageHandler {
@@ -35,6 +38,22 @@ public class LiveTexMessageHandler {
 
 	public void onDataMessage(ByteString bytes) {
 		// not used
+	}
+
+	public void sendTypingEvent(String text) {
+		TypingEvent event = new TypingEvent(text);
+		String json = EntityMapper.gson.toJson(event);
+		if (NetworkManager.getInstance().getWebSocket() != null) {
+			NetworkManager.getInstance().getWebSocket().send(json);
+		}
+	}
+
+	public void sendTextEvent(String text) {
+		TextMessage event = new TextMessage(text);
+		String json = EntityMapper.gson.toJson(event);
+		if (NetworkManager.getInstance().getWebSocket() != null) {
+			NetworkManager.getInstance().getWebSocket().send(json);
+		}
 	}
 
 	public PublishSubject<BaseEntity> entity() {

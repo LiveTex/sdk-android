@@ -24,10 +24,11 @@ public final class NetworkManager {
 	private static final String HOST_WS = "ws://" + HOST + "v1/ws/{clientId}"; // todo: wss
 
 	private final OkHttpManager okHttpManager = new OkHttpManager();
-	private WebSocket webSocket = null;
 	private final LiveTexWebsocketListener websocketListener;
 	private final CompositeDisposable disposables = new CompositeDisposable();
 
+	@Nullable
+	private WebSocket webSocket = null;
 	@NonNull
 	private final String touchpoint;
 	@Nullable
@@ -126,5 +127,10 @@ public final class NetworkManager {
 			webSocket = null;
 		}
 		disposables.clear();
+	}
+
+	@Nullable
+	public WebSocket getWebSocket() {
+		return webSocket;
 	}
 }

@@ -2,10 +2,15 @@ package ru.livetex.sdk.entity;
 
 import com.google.gson.annotations.SerializedName;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 public final class DialogState extends BaseEntity {
 	public static final String TYPE = "state";
 
+	@NonNull
 	public DialogStatus status;
+	@Nullable
 	public Employee employee;
 
 	public enum DialogStatus {
@@ -17,5 +22,10 @@ public final class DialogState extends BaseEntity {
 		ASSIGNED(),
 		@SerializedName("aiBot")
 		BOT();
+	}
+
+	@Override
+	protected String getType() {
+		return TYPE;
 	}
 }
