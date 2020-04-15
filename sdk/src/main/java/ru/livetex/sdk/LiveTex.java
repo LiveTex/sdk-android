@@ -2,7 +2,7 @@ package ru.livetex.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import ru.livetex.sdk.logic.LiveTexMessageHandler;
+import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 import ru.livetex.sdk.network.NetworkManager;
 import ru.livetex.sdk.network.websocket.LiveTexWebsocketListener;
 
@@ -10,10 +10,10 @@ public final class LiveTex {
 
 	private static LiveTex instance = null;
 
-	private final LiveTexMessageHandler messageHandler;
+	private final LiveTexMessagesHandler messagesHandler;
 
 	private LiveTex(Builder builder) {
-		this.messageHandler = builder.messageHandler;
+		this.messagesHandler = builder.messageHandler;
 	}
 
 	public static LiveTex getInstance() {
@@ -27,8 +27,8 @@ public final class LiveTex {
 		return NetworkManager.getInstance();
 	}
 
-	public LiveTexMessageHandler getMessageHandler() {
-		return messageHandler;
+	public LiveTexMessagesHandler getMessagesHandler() {
+		return messagesHandler;
 	}
 
 	public static class Builder {
@@ -39,7 +39,7 @@ public final class LiveTex {
 		@Nullable
 		private String deviceType = null;
 		// todo: setters with desc
-		private LiveTexMessageHandler messageHandler = new LiveTexMessageHandler();
+		private LiveTexMessagesHandler messageHandler = new LiveTexMessagesHandler();
 		private LiveTexWebsocketListener websocketListener = new LiveTexWebsocketListener(messageHandler);
 
 		public Builder(@NonNull String touchpoint) {

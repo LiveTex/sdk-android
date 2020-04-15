@@ -4,9 +4,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -17,7 +19,7 @@ import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.DialogState;
-import ru.livetex.sdk.logic.LiveTexMessageHandler;
+import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 import ru.livetex.sdk.network.AuthConnectionListener;
 import ru.livetex.sdk.network.NetworkManager;
 
@@ -25,10 +27,14 @@ public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
 
 	private final CompositeDisposable disposables = new CompositeDisposable();
-	private SharedPreferences sp;
 
 	private Toolbar toolbarView;
-	private LiveTexMessageHandler messageHandler = LiveTex.getInstance().getMessageHandler();
+	private EditText inputView;
+	private RecyclerView messagesView;
+
+	private SharedPreferences sp;
+	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
+	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -38,19 +44,24 @@ public class MainActivity extends AppCompatActivity {
 		sp = getSharedPreferences("livetex", Context.MODE_PRIVATE);
 
 		toolbarView = findViewById(R.id.toolbarView);
+		inputView = findViewById(R.id.inputView);
+		messagesView = findViewById(R.id.messagesView);
 
 		subscribe();
 		connect();
 	}
 
+	/**
+	 * Subscribe to connection state and chat events. Should be done before connect.
+	 */
 	private void subscribe() {
-		disposables.add(NetworkManager.getInstance().connectionState()
+		disposables.add(networkManager.connectionState()
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(this::onConnectionStateUpdate, thr -> {
 					Log.e(TAG, "", thr);
 				}));
 
-		disposables.add(messageHandler.dialogStateUpdate()
+		disposables.add(messagesHandler.dialogStateUpdate()
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(this::updateDialogState, thr -> {
 					Log.e(TAG, "", thr);
@@ -64,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
 			case CONNECTING:
 				break;
 			case CONNECTED: {
-				Disposable d = LiveTex.getInstance().getMessageHandler().sendTextEvent("123")
+				Disposable d = messagesHandler.sendTextEvent("123")
 						.subscribeOn(Schedulers.io())
 						.observeOn(AndroidSchedulers.mainThread())
 						.subscribe(resp -> {
@@ -85,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 		String clientId = sp.getString(Const.KEY_CLIENTID, null);
 		disposables.add(Completable
 				.fromAction(() -> {
-					LiveTex.getInstance().getNetworkManager().connect(clientId,
+					networkManager.connect(clientId,
 							authConnectionListener
 					);
 				})
@@ -99,7 +110,7 @@ public class MainActivity extends AppCompatActivity {
 		if (dialogState.employee != null) {
 			toolbarView.setTitle(dialogState.employee.name);
 		} else {
-			toolbarView.setTitle("");
+			toolbarView.setTitle("Диалог");
 		}
 
 		switch (dialogState.status) {

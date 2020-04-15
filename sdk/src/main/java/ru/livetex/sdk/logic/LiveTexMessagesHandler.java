@@ -16,7 +16,7 @@ import ru.livetex.sdk.entity.TypingEvent;
 import ru.livetex.sdk.network.NetworkManager;
 
 // todo: interface
-public class LiveTexMessageHandler {
+public class LiveTexMessagesHandler {
 
 	// Generic subject for all entities
 	private final PublishSubject<BaseEntity> entitySubject = PublishSubject.create();
@@ -28,13 +28,13 @@ public class LiveTexMessageHandler {
 	private final EntityMapper mapper = new EntityMapper();
 
 	public void onMessage(String text) {
-		Log.d("LiveTexMessageHandler", "onMessage " + text);
+		Log.d("LiveTexMessagesHandler", "onMessage " + text);
 		BaseEntity entity = null;
 
 		try {
 			entity = mapper.toEntity(text);
 		} catch (Exception e) {
-			Log.e("LiveTexMessageHandler", "Error when parsing message", e);
+			Log.e("LiveTexMessagesHandler", "Error when parsing message", e);
 		}
 		if (entity == null) {
 			return;
@@ -51,7 +51,7 @@ public class LiveTexMessageHandler {
 		if (subscription != null) {
 			subscription.onNext(entity);
 			subscription.onComplete();
-			subscriptions.remove(subscription);
+			subscriptions.remove(entity.correlationId);
 		}
 	}
 
