@@ -12,7 +12,7 @@ public final class TextMessage extends BaseEntity implements GenericMessage {
 	@NonNull
 	public String createdAt;
 	@NonNull
-	public Object creator; // todo: ! Employee or User, will be changed here
+	public Creator creator;
 
 	public TextMessage(String text) {
 		super();

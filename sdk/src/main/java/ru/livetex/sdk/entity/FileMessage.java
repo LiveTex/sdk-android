@@ -10,7 +10,7 @@ public final class FileMessage extends BaseEntity implements GenericMessage {
 	@NonNull
 	public String url;
 	@NonNull
-	public Object creator; // todo: ! Employee or User, will be changed here
+	public Creator creator;
 
 	@Override
 	protected String getType() {

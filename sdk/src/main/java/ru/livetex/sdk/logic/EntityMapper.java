@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -18,12 +19,15 @@ import ru.livetex.sdk.entity.BaseEntity;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
+import ru.livetex.sdk.entity.Employee;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
 import ru.livetex.sdk.entity.FileMessage;
+import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.SentMessage;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
+import ru.livetex.sdk.entity.User;
 
 public class EntityMapper {
 	private static final String TAG = "EntityMapper";
@@ -51,7 +55,22 @@ public class EntityMapper {
 					return gson.fromJson(json, DialogState.class);
 				}
 				case TextMessage.TYPE: {
-					return gson.fromJson(json, TextMessage.class);
+					TextMessage message = gson.fromJson(json, TextMessage.class);
+
+					JsonObject creator = jsonObject.getAsJsonObject("creator");
+					String creatorType = creator.get("type").getAsString();
+
+					switch (creatorType) {
+						case Employee.TYPE: {
+							message.creator = gson.fromJson(creator, Employee.class);
+							break;
+						}
+						case User.TYPE: {
+							message.creator = gson.fromJson(creator, User.class);
+							break;
+						}
+					}
+					return message;
 				}
 				case TypingEvent.TYPE: {
 					return gson.fromJson(json, TypingEvent.class);
@@ -63,7 +82,22 @@ public class EntityMapper {
 					return gson.fromJson(json, SentMessage.class);
 				}
 				case FileMessage.TYPE: {
-					return gson.fromJson(json, FileMessage.class);
+					FileMessage message = gson.fromJson(json, FileMessage.class);
+
+					JsonObject creator = jsonObject.getAsJsonObject("creator");
+					String creatorType = creator.get("type").getAsString();
+
+					switch (creatorType) {
+						case Employee.TYPE: {
+							message.creator = gson.fromJson(creator, Employee.class);
+							break;
+						}
+						case User.TYPE: {
+							message.creator = gson.fromJson(creator, User.class);
+							break;
+						}
+					}
+					return message;
 				}
 				case AttributesEntity.TYPE: {
 					return gson.fromJson(json, AttributesEntity.class);
@@ -75,7 +109,33 @@ public class EntityMapper {
 					return gson.fromJson(json, DepartmentRequestEntity.class);
 				}
 				case HistoryEntity.TYPE: {
-					return gson.fromJson(json, HistoryEntity.class);
+					HistoryEntity history = gson.fromJson(json, HistoryEntity.class);
+
+					JsonArray messages = jsonObject.getAsJsonArray("messages");
+
+					for (int i = 0; i < messages.size(); i++) {
+						JsonElement message = messages.get(i);
+
+						String msgType = message.getAsJsonObject().get("type").getAsString();
+						GenericMessage msg = null;
+
+						switch (msgType) {
+							case TextMessage.TYPE: {
+								msg = gson.fromJson(message, TextMessage.class);
+								break;
+							}
+							case FileMessage.TYPE: {
+								msg = gson.fromJson(message, FileMessage.class);
+								break;
+							}
+						}
+
+						if (msg != null) {
+							history.messages.add(msg);
+						}
+					}
+
+					return history;
 				}
 				case EmployeeTypingEvent.TYPE: {
 					return gson.fromJson(json, EmployeeTypingEvent.class);
