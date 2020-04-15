@@ -3,13 +3,19 @@ package ru.livetex.sdk.logic;
 import android.util.Log;
 
 import java.util.HashMap;
+import java.util.Map;
 
+import androidx.annotation.Nullable;
 import io.reactivex.Single;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import okio.ByteString;
+import ru.livetex.sdk.entity.AttributesEntity;
+import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
 import ru.livetex.sdk.entity.DialogState;
+import ru.livetex.sdk.entity.EmployeeTypingEvent;
+import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.SentMessage;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
@@ -18,9 +24,11 @@ import ru.livetex.sdk.network.NetworkManager;
 // todo: interface
 public class LiveTexMessagesHandler {
 
-	// Generic subject for all entities
 	private final PublishSubject<BaseEntity> entitySubject = PublishSubject.create();
 	private final PublishSubject<DialogState> dialogStateSubject = PublishSubject.create();
+	private final PublishSubject<HistoryEntity> historySubject = PublishSubject.create();
+	private final PublishSubject<EmployeeTypingEvent> employeeTypingSubject = PublishSubject.create();
+	private final PublishSubject<AttributesRequest> attributesRequestSubject = PublishSubject.create();
 	// todo: clear and dispose on disconnect
 	private final HashMap<String, Subject> subscriptions = new HashMap<>();
 
@@ -42,8 +50,15 @@ public class LiveTexMessagesHandler {
 
 		entitySubject.onNext(entity);
 
+		// Subjects to notify client
 		if (entity instanceof DialogState) {
 			dialogStateSubject.onNext((DialogState) entity);
+		} else if (entity instanceof HistoryEntity) {
+			historySubject.onNext((HistoryEntity) entity);
+		} else if (entity instanceof EmployeeTypingEvent) {
+			employeeTypingSubject.onNext((EmployeeTypingEvent) entity);
+		} else if (entity instanceof AttributesRequest) {
+			attributesRequestSubject.onNext((AttributesRequest) entity);
 		}
 
 		Subject subscription = subscriptions.get(entity.correlationId);
@@ -55,12 +70,19 @@ public class LiveTexMessagesHandler {
 		}
 	}
 
-	public void onDataMessage(ByteString bytes) {
-		// not used
-	}
-
 	public void sendTypingEvent(String text) {
 		TypingEvent event = new TypingEvent(text);
+		String json = EntityMapper.gson.toJson(event);
+		if (NetworkManager.getInstance().getWebSocket() != null) {
+			NetworkManager.getInstance().getWebSocket().send(json);
+		}
+	}
+
+	public void sendAttributes(@Nullable String name,
+							   @Nullable String phone,
+							   @Nullable String email,
+							   @Nullable Map<String, Object> attrs) {
+		AttributesEntity event = new AttributesEntity(name, phone, email, attrs);
 		String json = EntityMapper.gson.toJson(event);
 		if (NetworkManager.getInstance().getWebSocket() != null) {
 			NetworkManager.getInstance().getWebSocket().send(json);
@@ -86,5 +108,21 @@ public class LiveTexMessagesHandler {
 
 	public PublishSubject<DialogState> dialogStateUpdate() {
 		return dialogStateSubject;
+	}
+
+	public PublishSubject<HistoryEntity> history() {
+		return historySubject;
+	}
+
+	public PublishSubject<EmployeeTypingEvent> employeeTyping() {
+		return employeeTypingSubject;
+	}
+
+	public PublishSubject<AttributesRequest> attributesRequest() {
+		return attributesRequestSubject;
+	}
+
+	public void onDataMessage(ByteString bytes) {
+		// not used
 	}
 }

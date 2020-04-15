@@ -23,10 +23,13 @@ import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.DialogState;
+import ru.livetex.sdk.entity.EmployeeTypingEvent;
+import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 import ru.livetex.sdk.network.AuthConnectionListener;
 import ru.livetex.sdk.network.NetworkManager;
 
+// todo: use ViewModel
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
 
@@ -79,6 +82,14 @@ public class MainActivity extends AppCompatActivity {
 		imm.hideSoftInputFromWindow(inputView.getWindowToken(), 0);
 
 		// todo: create local message and try to send
+
+		Disposable d = messagesHandler.sendTextEvent(text)
+				.subscribeOn(Schedulers.io())
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(resp -> {
+					Log.i(TAG, resp.toString());
+					inputView.setText(null);
+				}, thr -> Log.e(TAG, "", thr));
 	}
 
 	/**
@@ -91,11 +102,42 @@ public class MainActivity extends AppCompatActivity {
 					Log.e(TAG, "", thr);
 				}));
 
+		disposables.add(messagesHandler.history()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::updateHistory, thr -> {
+					Log.e(TAG, "", thr);
+				}));
+
+		disposables.add(messagesHandler.attributesRequest()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(attributesRequest -> {
+					Disposable d = Completable.fromAction(() -> messagesHandler.sendAttributes("Demo user", null, null, null))
+							.subscribeOn(Schedulers.io())
+							.observeOn(AndroidSchedulers.mainThread())
+							.subscribe(Functions.EMPTY_ACTION, thr -> Log.e(TAG, "", thr));
+				}, thr -> {
+					Log.e(TAG, "", thr);
+				}));
+
 		disposables.add(messagesHandler.dialogStateUpdate()
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(this::updateDialogState, thr -> {
 					Log.e(TAG, "", thr);
 				}));
+
+		disposables.add(messagesHandler.employeeTyping()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::updateEmployeeTypingState, thr -> {
+					Log.e(TAG, "", thr);
+				}));
+	}
+
+	private void updateEmployeeTypingState(EmployeeTypingEvent employeeTypingEvent) {
+		// todo:
+	}
+
+	private void updateHistory(HistoryEntity historyEntity) {
+		// todo:
 	}
 
 	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {
@@ -105,12 +147,6 @@ public class MainActivity extends AppCompatActivity {
 			case CONNECTING:
 				break;
 			case CONNECTED: {
-				Disposable d = messagesHandler.sendTextEvent("123")
-						.subscribeOn(Schedulers.io())
-						.observeOn(AndroidSchedulers.mainThread())
-						.subscribe(resp -> {
-							Log.i(TAG, resp.toString());
-						}, thr -> Log.e(TAG, "", thr));
 				break;
 			}
 		}
