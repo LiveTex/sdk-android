@@ -1,5 +1,6 @@
 package ru.livetex.sdk.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -10,7 +11,7 @@ public final class HistoryEntity extends BaseEntity {
 	@NonNull
 	public String createdAt;
 	@NonNull
-	public List<GenericMessage> messages;
+	public transient List<GenericMessage> messages = new ArrayList<>();
 
 	@Override
 	protected String getType() {

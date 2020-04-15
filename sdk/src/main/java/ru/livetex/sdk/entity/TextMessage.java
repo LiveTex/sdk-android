@@ -12,7 +12,7 @@ public final class TextMessage extends BaseEntity implements GenericMessage {
 	@NonNull
 	public String createdAt;
 	@NonNull
-	public Creator creator;
+	public transient Creator creator;
 
 	public TextMessage(String text) {
 		super();
