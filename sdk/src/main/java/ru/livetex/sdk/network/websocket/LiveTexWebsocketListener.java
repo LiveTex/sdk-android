@@ -9,11 +9,10 @@ import okhttp3.WebSocketListener;
 import okio.ByteString;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 
-// todo: interface or base class
 // todo: logging flag
 public class LiveTexWebsocketListener extends WebSocketListener {
-
 	private static final String TAG = "LTWebsocketListener";
+
 	private final LiveTexMessagesHandler messageHandler;
 	private final PublishSubject<WebSocket> disconnectEvent = PublishSubject.create();
 

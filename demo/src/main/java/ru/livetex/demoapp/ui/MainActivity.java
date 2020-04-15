@@ -3,8 +3,12 @@ package ru.livetex.demoapp.ui;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -41,14 +45,40 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.a_main);
 
-		sp = getSharedPreferences("livetex", Context.MODE_PRIVATE);
+		sp = getSharedPreferences("livetex-demo", Context.MODE_PRIVATE);
 
 		toolbarView = findViewById(R.id.toolbarView);
 		inputView = findViewById(R.id.inputView);
 		messagesView = findViewById(R.id.messagesView);
 
+		setupUI();
 		subscribe();
 		connect();
+	}
+
+	private void setupUI() {
+		inputView.setOnEditorActionListener((v, actionId, event) -> {
+			if (actionId == EditorInfo.IME_ACTION_SEND) {
+				sendMessage();
+				return true;
+			}
+			return false;
+		});
+	}
+
+	private void sendMessage() {
+		String text = inputView.getText().toString().trim();
+
+		if (TextUtils.isEmpty(text)) {
+			Toast.makeText(this, "Message is empty", Toast.LENGTH_SHORT).show();
+			return;
+		}
+
+		// todo: move to utils
+		InputMethodManager imm = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+		imm.hideSoftInputFromWindow(inputView.getWindowToken(), 0);
+
+		// todo: create local message and try to send
 	}
 
 	/**

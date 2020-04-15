@@ -12,9 +12,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
+import ru.livetex.sdk.entity.AttributesEntity;
+import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
 import ru.livetex.sdk.entity.Department;
+import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
+import ru.livetex.sdk.entity.EmployeeTypingEvent;
+import ru.livetex.sdk.entity.FileMessage;
+import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.SentMessage;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
@@ -55,6 +61,24 @@ public class EntityMapper {
 				}
 				case SentMessage.TYPE: {
 					return gson.fromJson(json, SentMessage.class);
+				}
+				case FileMessage.TYPE: {
+					return gson.fromJson(json, FileMessage.class);
+				}
+				case AttributesEntity.TYPE: {
+					return gson.fromJson(json, AttributesEntity.class);
+				}
+				case AttributesRequest.TYPE: {
+					return gson.fromJson(json, AttributesRequest.class);
+				}
+				case DepartmentRequestEntity.TYPE: {
+					return gson.fromJson(json, DepartmentRequestEntity.class);
+				}
+				case HistoryEntity.TYPE: {
+					return gson.fromJson(json, HistoryEntity.class);
+				}
+				case EmployeeTypingEvent.TYPE: {
+					return gson.fromJson(json, EmployeeTypingEvent.class);
 				}
 				default: {
 					Log.w(TAG, "Unknown model with type " + type);

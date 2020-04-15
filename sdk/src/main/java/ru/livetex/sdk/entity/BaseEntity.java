@@ -16,10 +16,9 @@ public abstract class BaseEntity {
 	@SerializedName("type")
 	public String type;
 
-	// todo: object
 	@Nullable
-	@SerializedName("error")
-	public Object[] error;
+	@SerializedName("errors")
+	public ErrorEntity[] errors;
 
 	public BaseEntity() {
 		correlationId = UUID.randomUUID().toString();
