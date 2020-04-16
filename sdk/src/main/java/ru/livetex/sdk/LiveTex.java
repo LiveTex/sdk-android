@@ -33,6 +33,8 @@ public final class LiveTex {
 
 	public static class Builder {
 		@NonNull
+		private final String host;
+		@NonNull
 		private final String touchpoint;
 		@Nullable
 		private String deviceId = null;
@@ -42,12 +44,14 @@ public final class LiveTex {
 		private LiveTexMessagesHandler messageHandler = new LiveTexMessagesHandler();
 		private LiveTexWebsocketListener websocketListener = new LiveTexWebsocketListener(messageHandler);
 
-		public Builder(@NonNull String touchpoint) {
+		public Builder(@NonNull String host,
+					   @NonNull String touchpoint) {
+			this.host = host;
 			this.touchpoint = touchpoint;
 		}
 
 		public void build() {
-			NetworkManager.init(touchpoint, deviceId, deviceType, websocketListener);
+			NetworkManager.init(host, touchpoint, deviceId, deviceType, websocketListener);
 			instance = new LiveTex(this);
 		}
 	}

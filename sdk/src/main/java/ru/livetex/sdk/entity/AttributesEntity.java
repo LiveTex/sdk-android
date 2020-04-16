@@ -19,6 +19,7 @@ public final class AttributesEntity extends BaseEntity {
 	public final HashMap<String, Object> attributes = new HashMap<>();
 
 	public AttributesEntity(@Nullable String name, @Nullable String phone, @Nullable String email, @Nullable Map<String, Object> attrs) {
+		super();
 		this.name = name;
 		this.phone = phone;
 		this.email = email;

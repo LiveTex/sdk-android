@@ -24,25 +24,27 @@ import ru.livetex.sdk.network.NetworkManager;
 // todo: interface
 public class LiveTexMessagesHandler {
 
+	private final String TAG = "MessagesHandler";
+
 	private final PublishSubject<BaseEntity> entitySubject = PublishSubject.create();
 	private final PublishSubject<DialogState> dialogStateSubject = PublishSubject.create();
 	private final PublishSubject<HistoryEntity> historySubject = PublishSubject.create();
 	private final PublishSubject<EmployeeTypingEvent> employeeTypingSubject = PublishSubject.create();
 	private final PublishSubject<AttributesRequest> attributesRequestSubject = PublishSubject.create();
-	// todo: clear and dispose on disconnect
+	// todo: clear and dispose on websocket disconnect
 	private final HashMap<String, Subject> subscriptions = new HashMap<>();
 
 	// todo: customizable
 	private final EntityMapper mapper = new EntityMapper();
 
 	public void onMessage(String text) {
-		Log.d("LiveTexMessagesHandler", "onMessage " + text);
+		Log.d(TAG, "onMessage " + text);
 		BaseEntity entity = null;
 
 		try {
 			entity = mapper.toEntity(text);
 		} catch (Exception e) {
-			Log.e("LiveTexMessagesHandler", "Error when parsing message", e);
+			Log.e(TAG, "Error when parsing message", e);
 		}
 		if (entity == null) {
 			return;
@@ -73,9 +75,7 @@ public class LiveTexMessagesHandler {
 	public void sendTypingEvent(String text) {
 		TypingEvent event = new TypingEvent(text);
 		String json = EntityMapper.gson.toJson(event);
-		if (NetworkManager.getInstance().getWebSocket() != null) {
-			NetworkManager.getInstance().getWebSocket().send(json);
-		}
+		sendJson(json);
 	}
 
 	public void sendAttributes(@Nullable String name,
@@ -84,9 +84,7 @@ public class LiveTexMessagesHandler {
 							   @Nullable Map<String, Object> attrs) {
 		AttributesEntity event = new AttributesEntity(name, phone, email, attrs);
 		String json = EntityMapper.gson.toJson(event);
-		if (NetworkManager.getInstance().getWebSocket() != null) {
-			NetworkManager.getInstance().getWebSocket().send(json);
-		}
+		sendJson(json);
 	}
 
 	// todo: improve handling?
@@ -97,7 +95,7 @@ public class LiveTexMessagesHandler {
 		Subject<SentMessage> subscription = PublishSubject.<SentMessage> create();
 		if (NetworkManager.getInstance().getWebSocket() != null) {
 			subscriptions.put(event.correlationId, subscription);
-			NetworkManager.getInstance().getWebSocket().send(json);
+			sendJson(json);
 		}
 		return subscription.take(1).singleOrError();
 	}
@@ -124,5 +122,14 @@ public class LiveTexMessagesHandler {
 
 	public void onDataMessage(ByteString bytes) {
 		// not used
+	}
+
+	private void sendJson(String json) {
+		if (NetworkManager.getInstance().getWebSocket() != null) {
+			Log.d(TAG, "Sending: " + json);
+			NetworkManager.getInstance().getWebSocket().send(json);
+		} else {
+			throw new IllegalStateException("Trying to send data when websocket is null");
+		}
 	}
 }

@@ -11,6 +11,6 @@ public class App extends Application {
 		super.onCreate();
 
 		// init LiveTex
-		new LiveTex.Builder(Const.TOUCHPOINT).build();
+		new LiveTex.Builder(Const.HOST, Const.TOUCHPOINT).build();
 	}
 }

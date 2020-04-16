@@ -21,9 +21,9 @@ public final class NetworkManager {
 	private static final String TAG = "NetworkManager";
 	private static NetworkManager instance;
 
-	private static final String HOST = "sdk-mock.livetex.ru/"; // todo: dynamic or not here
-	private static final String HOST_API = "http://" + HOST + "v1/"; // todo: https
-	private static final String HOST_WS = "ws://" + HOST + "v1/ws/{clientId}"; // todo: wss
+	private final String HOST;
+	private final String HOST_API; // todo: https
+	private final String HOST_WS; // todo: wss
 
 	private final OkHttpManager okHttpManager = new OkHttpManager();
 	private final LiveTexWebsocketListener websocketListener;
@@ -45,21 +45,26 @@ public final class NetworkManager {
 	@Nullable
 	private String deviceType;
 
-	private NetworkManager(@NonNull String touchpoint,
+	private NetworkManager(@NonNull String host,
+						   @NonNull String touchpoint,
 						   @Nullable String deviceId,
 						   @Nullable String deviceType,
 						   LiveTexWebsocketListener websocketListener) {
+		this.HOST = host;
+		this.HOST_API = "http://" + HOST + "v1/"; // todo: https
+		this.HOST_WS = "ws://" + HOST + "v1/ws/{clientId}"; // todo: wss
 		this.touchpoint = touchpoint;
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;
 		this.websocketListener = websocketListener;
 	}
 
-	public static void init(@NonNull String touchpoint,
+	public static void init(@NonNull String host,
+							@NonNull String touchpoint,
 							String deviceId,
 							String deviceType,
 							LiveTexWebsocketListener websocketListener) {
-		instance = new NetworkManager(touchpoint, deviceId, deviceType, websocketListener);
+		instance = new NetworkManager(host, touchpoint, deviceId, deviceType, websocketListener);
 	}
 
 	public static NetworkManager getInstance() {
