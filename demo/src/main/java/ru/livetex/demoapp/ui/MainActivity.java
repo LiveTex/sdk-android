@@ -3,12 +3,16 @@ package ru.livetex.demoapp.ui;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import java.util.concurrent.TimeUnit;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -19,6 +23,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.sdk.LiveTex;
@@ -43,6 +48,9 @@ public class MainActivity extends AppCompatActivity {
 	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
 	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
 
+	private final long TEXT_TYPING_DELAY = 500; // milliseconds
+	private PublishSubject<String> textSubject = PublishSubject.create();
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -60,12 +68,44 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void setupUI() {
+		setupInput();
+	}
+
+	private void setupInput() {
 		inputView.setOnEditorActionListener((v, actionId, event) -> {
 			if (actionId == EditorInfo.IME_ACTION_SEND) {
 				sendMessage();
 				return true;
 			}
 			return false;
+		});
+
+		Disposable disposable = textSubject
+				.throttleLast(TEXT_TYPING_DELAY, TimeUnit.MILLISECONDS)
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(messagesHandler::sendTypingEvent, thr -> {
+					Log.e(TAG, "", thr);
+				});
+		disposables.add(disposable);
+
+		inputView.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+			}
+
+			@Override
+			public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
+			}
+
+			@Override
+			public void afterTextChanged(Editable editable) {
+				String text = editable.toString().trim();
+				// Send typing event, not faster than DELAY
+				if (!TextUtils.isEmpty(text)) {
+					textSubject.onNext(text);
+				}
+			}
 		});
 	}
 
