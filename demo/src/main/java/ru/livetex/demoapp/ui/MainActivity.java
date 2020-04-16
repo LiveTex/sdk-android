@@ -12,10 +12,15 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -26,6 +31,11 @@ import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
+import ru.livetex.demoapp.db.ChatState;
+import ru.livetex.demoapp.db.entity.ChatMessage;
+import ru.livetex.demoapp.ui.adapter.ChatItem;
+import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
+import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
 import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
@@ -48,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
 	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
 	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
 
+	private MessagesAdapter adapter = new MessagesAdapter();
+
 	private final long TEXT_TYPING_DELAY = 500; // milliseconds
 	private PublishSubject<String> textSubject = PublishSubject.create();
 
@@ -69,6 +81,32 @@ public class MainActivity extends AppCompatActivity {
 
 	private void setupUI() {
 		setupInput();
+
+		messagesView.setAdapter(adapter);
+		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(messagesView.getContext(),
+				DividerItemDecoration.VERTICAL);
+		dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider));
+		messagesView.addItemDecoration(dividerItemDecoration);
+
+		disposables.add(ChatState.instance.messages()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::setMessages, thr -> Log.e(TAG, "", thr)));
+	}
+
+	private void setMessages(List<ChatMessage> chatMessages) {
+		List<ChatItem> items = new ArrayList<>();
+
+		for (ChatMessage chatMessage : chatMessages) {
+			items.add(new ChatItem(chatMessage));
+		}
+		Collections.sort(items);
+
+		ChatMessageDiffUtil diffUtil =
+				new ChatMessageDiffUtil(adapter.getData(), items);
+		DiffUtil.DiffResult productDiffResult = DiffUtil.calculateDiff(diffUtil);
+
+		adapter.setData(items);
+		productDiffResult.dispatchUpdatesTo(adapter);
 	}
 
 	private void setupInput() {
@@ -121,14 +159,19 @@ public class MainActivity extends AppCompatActivity {
 		InputMethodManager imm = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
 		imm.hideSoftInputFromWindow(inputView.getWindowToken(), 0);
 
-		// todo: create local message and try to send
+		ChatMessage chatMessage = ChatState.instance.createNewMessage(text);
+		inputView.setText(null);
 
 		Disposable d = messagesHandler.sendTextEvent(text)
 				.subscribeOn(Schedulers.io())
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(resp -> {
-					Log.i(TAG, resp.toString());
-					inputView.setText(null);
+					chatMessage.id = resp.sentMessage.id;
+					// server time considered as correct one
+					// also this is time when message was actually sent, not created
+					chatMessage.createdAt = resp.sentMessage.createdAt;
+
+					// in real project here should be saving (upsert) in persistent storage
 				}, thr -> Log.e(TAG, "", thr));
 	}
 
@@ -147,6 +190,13 @@ public class MainActivity extends AppCompatActivity {
 				.subscribe(this::updateHistory, thr -> {
 					Log.e(TAG, "", thr);
 				}));
+
+		// todo:
+//		disposables.add(messagesHandler.departmentRequest()
+//				.observeOn(AndroidSchedulers.mainThread())
+//				.subscribe(this::updateHistory, thr -> {
+//					Log.e(TAG, "", thr);
+//				}));
 
 		disposables.add(messagesHandler.attributesRequest()
 				.observeOn(AndroidSchedulers.mainThread())

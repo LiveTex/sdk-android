@@ -1,5 +1,7 @@
 package ru.livetex.sdk.entity;
 
+import java.util.Date;
+
 import androidx.annotation.NonNull;
 
 public final class TextMessage extends BaseEntity implements GenericMessage {
@@ -10,7 +12,7 @@ public final class TextMessage extends BaseEntity implements GenericMessage {
 	@NonNull
 	public String content;
 	@NonNull
-	public String createdAt;
+	public Date createdAt;
 	@NonNull
 	public transient Creator creator;
 
