@@ -32,6 +32,7 @@ import io.reactivex.subjects.PublishSubject;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
+import ru.livetex.demoapp.db.Mapper;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
@@ -40,7 +41,9 @@ import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
+import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
+import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 import ru.livetex.sdk.network.AuthConnectionListener;
 import ru.livetex.sdk.network.NetworkManager;
@@ -222,8 +225,16 @@ public class MainActivity extends AppCompatActivity {
 				}));
 	}
 
+	// todo: file messages
 	private void updateHistory(HistoryEntity historyEntity) {
-		// todo:
+		List<ChatMessage> messages = new ArrayList<>();
+		for (GenericMessage genericMessage : historyEntity.messages) {
+			if (genericMessage instanceof TextMessage) {
+				ChatMessage chatMessage = Mapper.toChatMessage((TextMessage) genericMessage);
+				messages.add(chatMessage);
+			}
+		}
+		ChatState.instance.addMessages(messages);
 	}
 
 	private void onDepartmentRequest(DepartmentRequestEntity departmentRequestEntity) {
@@ -240,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void updateEmployeeTypingState(EmployeeTypingEvent employeeTypingEvent) {
-		// todo:
+		// todo: implement UI indicator
 	}
 
 	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {

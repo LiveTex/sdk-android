@@ -55,21 +55,7 @@ public class EntityMapper {
 					return gson.fromJson(json, DialogState.class);
 				}
 				case TextMessage.TYPE: {
-					TextMessage message = gson.fromJson(json, TextMessage.class);
-
-					JsonObject creator = jsonObject.getAsJsonObject("creator");
-					String creatorType = creator.get("type").getAsString();
-
-					switch (creatorType) {
-						case Employee.TYPE: {
-							message.creator = gson.fromJson(creator, Employee.class);
-							break;
-						}
-						case User.TYPE: {
-							message.creator = gson.fromJson(creator, User.class);
-							break;
-						}
-					}
+					TextMessage message = parseTextMessage(json);
 					return message;
 				}
 				case TypingEvent.TYPE: {
@@ -82,22 +68,7 @@ public class EntityMapper {
 					return gson.fromJson(json, SentMessage.class);
 				}
 				case FileMessage.TYPE: {
-					FileMessage message = gson.fromJson(json, FileMessage.class);
-
-					JsonObject creator = jsonObject.getAsJsonObject("creator");
-					String creatorType = creator.get("type").getAsString();
-
-					switch (creatorType) {
-						case Employee.TYPE: {
-							message.creator = gson.fromJson(creator, Employee.class);
-							break;
-						}
-						case User.TYPE: {
-							message.creator = gson.fromJson(creator, User.class);
-							break;
-						}
-					}
-					return message;
+					return parseFileMessage(json);
 				}
 				case AttributesEntity.TYPE: {
 					return gson.fromJson(json, AttributesEntity.class);
@@ -121,11 +92,11 @@ public class EntityMapper {
 
 						switch (msgType) {
 							case TextMessage.TYPE: {
-								msg = gson.fromJson(message, TextMessage.class);
+								msg = parseTextMessage(message);
 								break;
 							}
 							case FileMessage.TYPE: {
-								msg = gson.fromJson(message, FileMessage.class);
+								msg = parseFileMessage(message);
 								break;
 							}
 						}
@@ -145,6 +116,48 @@ public class EntityMapper {
 					return null;
 				}
 			}
+		}
+
+		private TextMessage parseTextMessage(JsonElement json) {
+			JsonObject jsonObject = json.getAsJsonObject();
+
+			TextMessage message = gson.fromJson(json, TextMessage.class);
+
+			JsonObject creator = jsonObject.getAsJsonObject("creator");
+			String creatorType = creator.get("type").getAsString();
+
+			switch (creatorType) {
+				case Employee.TYPE: {
+					message.creator = gson.fromJson(creator, Employee.class);
+					break;
+				}
+				case User.TYPE: {
+					message.creator = gson.fromJson(creator, User.class);
+					break;
+				}
+			}
+			return message;
+		}
+
+		private FileMessage parseFileMessage(JsonElement json) {
+			JsonObject jsonObject = json.getAsJsonObject();
+
+			FileMessage message = gson.fromJson(json, FileMessage.class);
+
+			JsonObject creator = jsonObject.getAsJsonObject("creator");
+			String creatorType = creator.get("type").getAsString();
+
+			switch (creatorType) {
+				case Employee.TYPE: {
+					message.creator = gson.fromJson(creator, Employee.class);
+					break;
+				}
+				case User.TYPE: {
+					message.creator = gson.fromJson(creator, User.class);
+					break;
+				}
+			}
+			return message;
 		}
 	}
 }

@@ -2,9 +2,12 @@ package ru.livetex.demoapp.db;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 
@@ -15,10 +18,10 @@ public class ChatState {
 
 	public final static ChatState instance = new ChatState();
 
-	private BehaviorSubject<List<ChatMessage>> messagesSubject = BehaviorSubject.createDefault(new ArrayList<>());
+	private BehaviorSubject<Set<ChatMessage>> messagesSubject = BehaviorSubject.createDefault(new HashSet<>());
 
-	public BehaviorSubject<List<ChatMessage>> messages() {
-		return messagesSubject;
+	public Observable<List<ChatMessage>> messages() {
+		return messagesSubject.map(ArrayList::new);
 	}
 
 	public synchronized void addMessages(List<ChatMessage> messages) {
