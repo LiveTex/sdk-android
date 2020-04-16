@@ -37,6 +37,7 @@ import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
 import ru.livetex.sdk.LiveTex;
+import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
 import ru.livetex.sdk.entity.HistoryEntity;
@@ -191,12 +192,11 @@ public class MainActivity extends AppCompatActivity {
 					Log.e(TAG, "", thr);
 				}));
 
-		// todo:
-//		disposables.add(messagesHandler.departmentRequest()
-//				.observeOn(AndroidSchedulers.mainThread())
-//				.subscribe(this::updateHistory, thr -> {
-//					Log.e(TAG, "", thr);
-//				}));
+		disposables.add(messagesHandler.departmentRequest()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::onDepartmentRequest, thr -> {
+					Log.e(TAG, "", thr);
+				}));
 
 		disposables.add(messagesHandler.attributesRequest()
 				.observeOn(AndroidSchedulers.mainThread())
@@ -222,11 +222,24 @@ public class MainActivity extends AppCompatActivity {
 				}));
 	}
 
-	private void updateEmployeeTypingState(EmployeeTypingEvent employeeTypingEvent) {
+	private void updateHistory(HistoryEntity historyEntity) {
 		// todo:
 	}
 
-	private void updateHistory(HistoryEntity historyEntity) {
+	private void onDepartmentRequest(DepartmentRequestEntity departmentRequestEntity) {
+		if (departmentRequestEntity.departments.isEmpty()) {
+			// todo: display some error
+			return;
+		}
+		// todo: real selection
+		Disposable d = Completable
+				.fromAction(() -> messagesHandler.sendDepartmentSelectionEvent(departmentRequestEntity.departments.get(0).id))
+				.subscribeOn(Schedulers.io())
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(Functions.EMPTY_ACTION, thr -> Log.e(TAG, "", thr));
+	}
+
+	private void updateEmployeeTypingState(EmployeeTypingEvent employeeTypingEvent) {
 		// todo:
 	}
 

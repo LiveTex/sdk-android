@@ -13,6 +13,8 @@ import okio.ByteString;
 import ru.livetex.sdk.entity.AttributesEntity;
 import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
+import ru.livetex.sdk.entity.Department;
+import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
 import ru.livetex.sdk.entity.HistoryEntity;
@@ -31,6 +33,7 @@ public class LiveTexMessagesHandler {
 	private final PublishSubject<HistoryEntity> historySubject = PublishSubject.create();
 	private final PublishSubject<EmployeeTypingEvent> employeeTypingSubject = PublishSubject.create();
 	private final PublishSubject<AttributesRequest> attributesRequestSubject = PublishSubject.create();
+	private final PublishSubject<DepartmentRequestEntity> departmentRequestSubject = PublishSubject.create();
 	// todo: clear and dispose on websocket disconnect
 	private final HashMap<String, Subject> subscriptions = new HashMap<>();
 
@@ -61,6 +64,8 @@ public class LiveTexMessagesHandler {
 			employeeTypingSubject.onNext((EmployeeTypingEvent) entity);
 		} else if (entity instanceof AttributesRequest) {
 			attributesRequestSubject.onNext((AttributesRequest) entity);
+		} else if (entity instanceof DepartmentRequestEntity) {
+			departmentRequestSubject.onNext((DepartmentRequestEntity) entity);
 		}
 
 		Subject subscription = subscriptions.get(entity.correlationId);
@@ -87,7 +92,6 @@ public class LiveTexMessagesHandler {
 		sendJson(json);
 	}
 
-	// todo: improve handling?
 	public Single<SentMessage> sendTextEvent(String text) {
 		TextMessage event = new TextMessage(text);
 		String json = EntityMapper.gson.toJson(event);
@@ -98,6 +102,19 @@ public class LiveTexMessagesHandler {
 			sendJson(json);
 		}
 		return subscription.take(1).singleOrError();
+	}
+
+	// todo: handle response?
+	public void sendDepartmentSelectionEvent(String depId) {
+		Department event = new Department(depId);
+		String json = EntityMapper.gson.toJson(event);
+
+		//Subject<SentMessage> subscription = PublishSubject.<SentMessage> create();
+		if (NetworkManager.getInstance().getWebSocket() != null) {
+			//subscriptions.put(event.correlationId, subscription);
+			sendJson(json);
+		}
+		//return subscription.take(1).singleOrError();
 	}
 
 	public PublishSubject<BaseEntity> entity() {
@@ -118,6 +135,10 @@ public class LiveTexMessagesHandler {
 
 	public PublishSubject<AttributesRequest> attributesRequest() {
 		return attributesRequestSubject;
+	}
+
+	public PublishSubject<DepartmentRequestEntity> departmentRequest() {
+		return departmentRequestSubject;
 	}
 
 	public void onDataMessage(ByteString bytes) {
