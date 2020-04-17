@@ -8,7 +8,6 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -22,6 +21,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
 				DividerItemDecoration.VERTICAL);
 		dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider));
 		messagesView.addItemDecoration(dividerItemDecoration);
+		((SimpleItemAnimator) messagesView.getItemAnimator()).setSupportsChangeAnimations(false);
 
 		disposables.add(ChatState.instance.messages()
 				.observeOn(AndroidSchedulers.mainThread())
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
 	private void setMessages(List<ChatMessage> chatMessages) {
 		List<ChatItem> items = new ArrayList<>();
+		boolean needScroll = chatMessages.size() > adapter.getItemCount();
 
 		for (ChatMessage chatMessage : chatMessages) {
 			items.add(new ChatItem(chatMessage));
@@ -111,6 +113,10 @@ public class MainActivity extends AppCompatActivity {
 
 		adapter.setData(items);
 		productDiffResult.dispatchUpdatesTo(adapter);
+
+		if (needScroll) {
+			messagesView.smoothScrollToPosition(adapter.getItemCount() - 1);
+		}
 	}
 
 	private void setupInput() {
@@ -143,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
 			@Override
 			public void afterTextChanged(Editable editable) {
 				String text = editable.toString().trim();
-				// Send typing event, not faster than DELAY
+				// Send typing event, not faster than TEXT_TYPING_DELAY
 				if (!TextUtils.isEmpty(text)) {
 					textSubject.onNext(text);
 				}
@@ -159,10 +165,6 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		}
 
-		// todo: move to utils
-		InputMethodManager imm = (InputMethodManager) getApplicationContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-		imm.hideSoftInputFromWindow(inputView.getWindowToken(), 0);
-
 		ChatMessage chatMessage = ChatState.instance.createNewMessage(text);
 		inputView.setText(null);
 
@@ -170,12 +172,14 @@ public class MainActivity extends AppCompatActivity {
 				.subscribeOn(Schedulers.io())
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(resp -> {
+					ChatState.instance.removeMessage(chatMessage);
 					chatMessage.id = resp.sentMessage.id;
 					// server time considered as correct one
 					// also this is time when message was actually sent, not created
 					chatMessage.createdAt = resp.sentMessage.createdAt;
 
 					// in real project here should be saving (upsert) in persistent storage
+					ChatState.instance.addMessage(chatMessage);
 				}, thr -> Log.e(TAG, "", thr));
 	}
 

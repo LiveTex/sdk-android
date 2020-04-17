@@ -34,6 +34,11 @@ public class ChatState {
 		messagesSubject.onNext(messagesSubject.getValue());
 	}
 
+	public synchronized void removeMessage(ChatMessage message) {
+		messagesSubject.getValue().remove(message);
+		//messagesSubject.onNext(messagesSubject.getValue());
+	}
+
 	/**
 	 * Create local message with fake id (will be overriden by server)
 	 * // todo: id scheme need improvement. now no way to distinguish between sent and local messages (fake and not fake id)
