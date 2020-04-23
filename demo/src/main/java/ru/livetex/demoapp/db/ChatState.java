@@ -14,7 +14,7 @@ import ru.livetex.demoapp.db.entity.ChatMessage;
 /**
  * In real projects for persistent storage it's recommended to use DB (like Room)
  */
-public class ChatState {
+public final class ChatState {
 
 	public final static ChatState instance = new ChatState();
 
@@ -43,7 +43,7 @@ public class ChatState {
 	 * Create local message with fake id (will be overriden by server)
 	 * // todo: id scheme need improvement. now no way to distinguish between sent and local messages (fake and not fake id)
 	 */
-	public ChatMessage createNewMessage(String text) {
+	public synchronized ChatMessage createNewMessage(String text) {
 		ChatMessage chatMessage = new ChatMessage(
 				UUID.randomUUID().toString(),
 				text,

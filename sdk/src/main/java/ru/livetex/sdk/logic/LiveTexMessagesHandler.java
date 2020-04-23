@@ -18,7 +18,7 @@ import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
 import ru.livetex.sdk.entity.HistoryEntity;
-import ru.livetex.sdk.entity.SentMessage;
+import ru.livetex.sdk.entity.ResponseEntity;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
 import ru.livetex.sdk.network.NetworkManager;
@@ -92,29 +92,25 @@ public class LiveTexMessagesHandler {
 		sendJson(json);
 	}
 
-	public Single<SentMessage> sendTextEvent(String text) {
+	public Single<ResponseEntity> sendTextEvent(String text) {
 		TextMessage event = new TextMessage(text);
 		String json = EntityMapper.gson.toJson(event);
+		return sendAndSubscribe(json, event.correlationId);
+	}
 
-		Subject<SentMessage> subscription = PublishSubject.<SentMessage> create();
+	public Single<ResponseEntity> sendDepartmentSelectionEvent(String depId) {
+		Department event = new Department(depId);
+		String json = EntityMapper.gson.toJson(event);
+		return sendAndSubscribe(json, event.correlationId);
+	}
+
+	private Single<ResponseEntity> sendAndSubscribe(String json, String correlationId) {
+		Subject<ResponseEntity> subscription = PublishSubject.create();
 		if (NetworkManager.getInstance().getWebSocket() != null) {
-			subscriptions.put(event.correlationId, subscription);
+			subscriptions.put(correlationId, subscription);
 			sendJson(json);
 		}
 		return subscription.take(1).singleOrError();
-	}
-
-	// todo: handle response?
-	public void sendDepartmentSelectionEvent(String depId) {
-		Department event = new Department(depId);
-		String json = EntityMapper.gson.toJson(event);
-
-		//Subject<SentMessage> subscription = PublishSubject.<SentMessage> create();
-		if (NetworkManager.getInstance().getWebSocket() != null) {
-			//subscriptions.put(event.correlationId, subscription);
-			sendJson(json);
-		}
-		//return subscription.take(1).singleOrError();
 	}
 
 	public PublishSubject<BaseEntity> entity() {

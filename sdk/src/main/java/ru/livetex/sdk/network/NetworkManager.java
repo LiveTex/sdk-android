@@ -7,8 +7,8 @@ import java.io.IOException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.WorkerThread;
 import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
@@ -71,17 +71,12 @@ public final class NetworkManager {
 		return connectionStateSubject;
 	}
 
-	// todo: rx
-	@WorkerThread
-	public void connect(@Nullable String clientId,
-						@NonNull AuthConnectionListener listener) {
-		try {
-			clientId = auth(touchpoint, clientId, deviceId, deviceType);
-			connectWebSocket(clientId);
-			listener.onAuthSuccess(clientId);
-		} catch (IOException e) {
-			listener.onAuthError(e);
-		}
+	public Single<String> connect(@Nullable String clientId) {
+		return Single.fromCallable(() -> {
+			String finalClientId = auth(touchpoint, clientId, deviceId, deviceType);
+			connectWebSocket(finalClientId);
+			return finalClientId;
+		});
 	}
 
 	private void connectWebSocket(@NonNull String clientId) throws IOException {

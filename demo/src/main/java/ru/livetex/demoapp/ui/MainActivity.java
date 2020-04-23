@@ -1,5 +1,6 @@
 package ru.livetex.demoapp.ui;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -29,6 +30,7 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
+import ru.livetex.demoapp.BuildConfig;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
@@ -38,14 +40,15 @@ import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
 import ru.livetex.sdk.LiveTex;
+import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
 import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
+import ru.livetex.sdk.entity.LiveTexError;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
-import ru.livetex.sdk.network.AuthConnectionListener;
 import ru.livetex.sdk.network.NetworkManager;
 
 // todo: use ViewModel
@@ -242,16 +245,45 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void onDepartmentRequest(DepartmentRequestEntity departmentRequestEntity) {
-		if (departmentRequestEntity.departments.isEmpty()) {
-			// todo: display some error
+		List<Department> departments = departmentRequestEntity.departments;
+
+		// For test only
+		if (BuildConfig.DEBUG) {
+			departments.add(new Department("Тайная комната"));
+		}
+
+		if (departments.isEmpty()) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(this)
+					.setTitle("Ошибка")
+					.setMessage("Список комнат пуст, свяжитесь с поддержкой");
+			builder.show();
 			return;
 		}
-		// todo: real selection
-		Disposable d = Completable
-				.fromAction(() -> messagesHandler.sendDepartmentSelectionEvent(departmentRequestEntity.departments.get(0).id))
+
+		List<String> departmentNames = new ArrayList<>();
+		for (Department dep : departments) {
+			departmentNames.add(dep.id);
+		}
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Выберите комнату");
+		builder.setCancelable(false);
+		builder.setItems(departmentNames.toArray(new String[0]), (dialogInterface, i) -> {
+			selectDepartment(departments.get(i));
+		});
+		AlertDialog dialog = builder.create();
+		dialog.show();
+	}
+
+	private void selectDepartment(Department department) {
+		Disposable d = messagesHandler.sendDepartmentSelectionEvent(department.id)
 				.subscribeOn(Schedulers.io())
 				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(Functions.EMPTY_ACTION, thr -> Log.e(TAG, "", thr));
+				.subscribe(response -> {
+					if (response.error != null && response.error.contains(LiveTexError.INVALID_DEPARTMENT)) {
+						Toast.makeText(this, "Была выбрана невалидная комната", Toast.LENGTH_SHORT).show();
+					}
+				}, thr -> Log.e(TAG, "", thr));
 	}
 
 	private void updateEmployeeTypingState(EmployeeTypingEvent employeeTypingEvent) {
@@ -278,16 +310,10 @@ public class MainActivity extends AppCompatActivity {
 
 	private void connect() {
 		String clientId = sp.getString(Const.KEY_CLIENTID, null);
-		disposables.add(Completable
-				.fromAction(() -> {
-					networkManager.connect(clientId,
-							authConnectionListener
-					);
-				})
+		disposables.add(networkManager.connect(clientId)
 				.subscribeOn(Schedulers.io())
-				.subscribe(Functions.EMPTY_ACTION, e -> {
-					Log.e(TAG, "", e);
-				}));
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::onAuthSuccess, this::onAuthError));
 	}
 
 	private void updateDialogState(DialogState dialogState) {
@@ -313,15 +339,12 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	private AuthConnectionListener authConnectionListener = new AuthConnectionListener() {
-		@Override
-		public void onAuthSuccess(String clientId) {
-			sp.edit().putString(Const.KEY_CLIENTID, clientId).apply();
-		}
+	private void onAuthError(Throwable e) {
+		Log.e(TAG, "", e);
+		Toast.makeText(this, "Ошибка соединения " + e.getMessage(), Toast.LENGTH_SHORT).show();
+	}
 
-		@Override
-		public void onAuthError(Throwable throwable) {
-			Log.e(TAG, "", throwable);
-		}
-	};
+	private void onAuthSuccess(String clientId) {
+		sp.edit().putString(Const.KEY_CLIENTID, clientId).apply();
+	}
 }

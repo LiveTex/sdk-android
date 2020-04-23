@@ -2,12 +2,15 @@ package ru.livetex.sdk.entity;
 
 import java.util.Date;
 
+import androidx.annotation.Nullable;
+
 /**
- * Server response on message
+ * Server response on most requests. Request-reponse linked via correlationId field.
  */
-public final class SentMessage extends BaseEntity {
+public final class ResponseEntity extends BaseEntity {
 	public static final String TYPE = "result";
 
+	@Nullable
 	public SentMessageBody sentMessage;
 
 	@Override

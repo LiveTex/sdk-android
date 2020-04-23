@@ -1,5 +1,6 @@
 package ru.livetex.sdk.entity;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.google.gson.annotations.SerializedName;
@@ -17,8 +18,8 @@ public abstract class BaseEntity {
 	public String type;
 
 	@Nullable
-	@SerializedName("errors")
-	public ErrorEntity[] errors;
+	@SerializedName("error")
+	public List<LiveTexError> error;
 
 	public BaseEntity() {
 		correlationId = UUID.randomUUID().toString();

@@ -24,7 +24,7 @@ import ru.livetex.sdk.entity.EmployeeTypingEvent;
 import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
-import ru.livetex.sdk.entity.SentMessage;
+import ru.livetex.sdk.entity.ResponseEntity;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
 import ru.livetex.sdk.entity.User;
@@ -64,8 +64,8 @@ public class EntityMapper {
 				case Department.TYPE: {
 					return gson.fromJson(json, Department.class);
 				}
-				case SentMessage.TYPE: {
-					return gson.fromJson(json, SentMessage.class);
+				case ResponseEntity.TYPE: {
+					return gson.fromJson(json, ResponseEntity.class);
 				}
 				case FileMessage.TYPE: {
 					return parseFileMessage(json);
