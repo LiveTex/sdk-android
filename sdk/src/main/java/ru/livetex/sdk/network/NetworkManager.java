@@ -21,9 +21,7 @@ public final class NetworkManager {
 	private static final String TAG = "NetworkManager";
 	private static NetworkManager instance;
 
-	private final String HOST;
-	private final String HOST_API; // todo: https
-	private final String HOST_WS; // todo: wss
+	private String HOST;
 
 	private final OkHttpManager okHttpManager = new OkHttpManager();
 	private final LiveTexWebsocketListener websocketListener;
@@ -51,8 +49,6 @@ public final class NetworkManager {
 						   @Nullable String deviceType,
 						   LiveTexWebsocketListener websocketListener) {
 		this.HOST = host;
-		this.HOST_API = "http://" + HOST + "v1/"; // todo: https
-		this.HOST_WS = "ws://" + HOST + "v1/ws/{clientId}"; // todo: wss
 		this.touchpoint = touchpoint;
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;
@@ -95,7 +91,7 @@ public final class NetworkManager {
 		}
 		connectionStateSubject.onNext(ConnectionState.CONNECTING);
 
-		String url = HOST_WS.replace("{clientId}", clientId);
+		String url = getWebsocketEndpoint().replace("{clientId}", clientId);
 
 		Request request = new Request.Builder()
 				.url(url)
@@ -120,7 +116,7 @@ public final class NetworkManager {
 						@Nullable String clientId,
 						@Nullable String deviceId,
 						@Nullable String deviceType) throws IOException {
-		HttpUrl.Builder urlBuilder = HttpUrl.parse(HOST_API + "auth")
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(getApiHost() + "auth")
 				.newBuilder()
 				.addQueryParameter("touchPoint", touchpoint);
 
@@ -140,6 +136,7 @@ public final class NetworkManager {
 				.get();
 
 		// todo: error handling
+		// todo: in future here we can receive new host for weboscket connection, so HOST variable can be updated
 		return okHttpManager.requestString(rb.build());
 	}
 
@@ -155,5 +152,13 @@ public final class NetworkManager {
 	@Nullable
 	public WebSocket getWebSocket() {
 		return webSocket;
+	}
+
+	private String getApiHost() {
+		return "http://" + HOST + "v1/"; // todo: https
+	}
+
+	private String getWebsocketEndpoint() {
+		return "ws://" + HOST + "v1/ws/{clientId}"; // todo: wss
 	}
 }

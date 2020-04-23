@@ -33,21 +33,45 @@ public final class LiveTex {
 
 	public static class Builder {
 		@NonNull
-		private final String host;
+		private String host = "sdk-mock.livetex.ru/";
 		@NonNull
 		private final String touchpoint;
 		@Nullable
 		private String deviceId = null;
 		@Nullable
 		private String deviceType = null;
-		// todo: setters with desc
+
 		private LiveTexMessagesHandler messageHandler = new LiveTexMessagesHandler();
 		private LiveTexWebsocketListener websocketListener = new LiveTexWebsocketListener(messageHandler);
 
-		public Builder(@NonNull String host,
-					   @NonNull String touchpoint) {
-			this.host = host;
+		public Builder(@NonNull String touchpoint) {
 			this.touchpoint = touchpoint;
+		}
+
+		/**
+		 * Set custom host in format "[subdomain.]domain.zone/"
+		 * Host used for auth request and for websocket connection (but can be changed by auth response)
+		 */
+		public Builder setHost(@NonNull String host) {
+			this.host = host;
+			return this;
+		}
+
+		/**
+		 * Set custom MessagesHandler
+		 */
+		public Builder setMessageHandler(LiveTexMessagesHandler messageHandler) {
+			this.messageHandler = messageHandler;
+			return this;
+		}
+
+		/**
+		 * Set custom websocket listener
+		 * @param websocketListener
+		 */
+		public Builder setWebsocketListener(LiveTexWebsocketListener websocketListener) {
+			this.websocketListener = websocketListener;
+			return this;
 		}
 
 		public void build() {
