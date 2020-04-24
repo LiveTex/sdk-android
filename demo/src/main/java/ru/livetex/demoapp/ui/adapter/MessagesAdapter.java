@@ -9,14 +9,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
+import io.reactivex.functions.Consumer;
 import ru.livetex.demoapp.R;
+import ru.livetex.demoapp.db.entity.MessageSentState;
 
 public final class MessagesAdapter extends RecyclerView.Adapter {
 	private static final int VIEW_TYPE_MESSAGE_INCOMING = 1;
 	private static final int VIEW_TYPE_MESSAGE_OUTGOING = 2;
 
 	private List<ChatItem> messages = new ArrayList<>();
+	@Nullable
+	private Consumer<ChatItem> onMessageClickListener = null;
 
 	@NonNull
 	@Override
@@ -38,7 +43,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter {
 
 	@Override
 	public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-		ChatItem message = messages.get(position);
+		final ChatItem message = messages.get(position);
 
 		switch (holder.getItemViewType()) {
 			case VIEW_TYPE_MESSAGE_INCOMING:
@@ -46,6 +51,16 @@ public final class MessagesAdapter extends RecyclerView.Adapter {
 				break;
 			case VIEW_TYPE_MESSAGE_OUTGOING:
 				((OutgoingMessageHolder) holder).bind(message);
+		}
+
+		if (onMessageClickListener != null) {
+			holder.itemView.setOnClickListener(view -> {
+				try {
+					onMessageClickListener.accept(message);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			});
 		}
 	}
 
@@ -74,6 +89,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter {
 		this.messages.addAll(chatMessages);
 	}
 
+	public void setOnMessageClickListener(@NonNull Consumer<ChatItem> onMessageClickListener) {
+		this.onMessageClickListener = onMessageClickListener;
+	}
+
 	private static class IncomingMessageHolder extends RecyclerView.ViewHolder {
 		TextView messageText;
 
@@ -99,6 +118,11 @@ public final class MessagesAdapter extends RecyclerView.Adapter {
 
 		void bind(ChatItem message) {
 			messageText.setText(message.content);
+			if (message.sentState == MessageSentState.FAILED) {
+				messageText.setBackgroundResource(R.drawable.rounded_rectangle_red);
+			} else {
+				messageText.setBackgroundResource(R.drawable.rounded_rectangle_blue);
+			}
 		}
 	}
 }

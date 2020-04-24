@@ -1,9 +1,11 @@
 package ru.livetex.demoapp.ui.adapter;
 
 import java.util.Date;
+import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import ru.livetex.demoapp.db.entity.ChatMessage;
+import ru.livetex.demoapp.db.entity.MessageSentState;
 
 /**
  * This is wrapper for ChatMessage entity. It allows to use only UI data and also made adapter item mutable (for DiffUtil).
@@ -17,12 +19,14 @@ public class ChatItem implements Comparable<ChatItem> {
 	@NonNull
 	public Date createdAt; // timestamp in millis
 	public boolean isIncoming;
+	public MessageSentState sentState;
 
 	public ChatItem(ChatMessage message) {
 		this.id = message.id;
 		this.content = message.content;
 		this.createdAt = message.createdAt;
 		this.isIncoming = message.isIncoming;
+		this.sentState = message.sentState;
 	}
 
 	@Override
@@ -63,5 +67,26 @@ public class ChatItem implements Comparable<ChatItem> {
 
 	public void setIncoming(boolean incoming) {
 		isIncoming = incoming;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof ChatItem)) {
+			return false;
+		}
+		ChatItem chatItem = (ChatItem) o;
+		return isIncoming == chatItem.isIncoming &&
+				id.equals(chatItem.id) &&
+				content.equals(chatItem.content) &&
+				createdAt.equals(chatItem.createdAt) &&
+				sentState == chatItem.sentState;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, content, createdAt, isIncoming, sentState);
 	}
 }

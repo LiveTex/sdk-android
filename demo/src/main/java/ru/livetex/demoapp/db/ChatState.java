@@ -1,12 +1,14 @@
 package ru.livetex.demoapp.db;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import ru.livetex.demoapp.db.entity.ChatMessage;
@@ -18,25 +20,39 @@ public final class ChatState {
 
 	public final static ChatState instance = new ChatState();
 
-	private BehaviorSubject<Set<ChatMessage>> messagesSubject = BehaviorSubject.createDefault(new HashSet<>());
+	private Map<String, ChatMessage> messages = new ConcurrentHashMap<>();
+	private BehaviorSubject<List<ChatMessage>> messagesSubject = BehaviorSubject.createDefault(Collections.emptyList());
 
 	public Observable<List<ChatMessage>> messages() {
-		return messagesSubject.map(ArrayList::new);
+		return messagesSubject
+				.map(Collections::unmodifiableList);
 	}
 
-	public synchronized void addMessages(List<ChatMessage> messages) {
-		messagesSubject.getValue().addAll(messages);
-		messagesSubject.onNext(messagesSubject.getValue());
+	public synchronized void addMessages(List<ChatMessage> newMessages) {
+		for (ChatMessage message : newMessages) {
+			messages.put(message.id, message);
+		}
+		messagesSubject.onNext(new ArrayList<>(messages.values()));
 	}
 
 	public synchronized void addMessage(ChatMessage message) {
-		messagesSubject.getValue().add(message);
-		messagesSubject.onNext(messagesSubject.getValue());
+		messages.put(message.id, message);
+		messagesSubject.onNext(new ArrayList<>(messages.values()));
 	}
 
-	public synchronized void removeMessage(ChatMessage message) {
-		messagesSubject.getValue().remove(message);
-		//messagesSubject.onNext(messagesSubject.getValue());
+	public synchronized void removeMessage(String id) {
+		messages.remove(id);
+		//messagesSubject.onNext(new ArrayList<>(messages.values()));
+	}
+
+	public synchronized void updateMessage(ChatMessage message) {
+		messages.remove(message.id);
+		addMessage(message);
+	}
+
+	@Nullable
+	public ChatMessage getMessage(String id) {
+		return messages.get(id);
 	}
 
 	/**
@@ -47,8 +63,7 @@ public final class ChatState {
 		ChatMessage chatMessage = new ChatMessage(
 				UUID.randomUUID().toString(),
 				text,
-				new Date(),
-				false
+				new Date()
 		);
 		addMessage(chatMessage);
 		return chatMessage;

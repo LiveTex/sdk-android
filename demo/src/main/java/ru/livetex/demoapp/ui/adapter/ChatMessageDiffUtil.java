@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.recyclerview.widget.DiffUtil;
-import ru.livetex.demoapp.db.entity.ChatMessage;
 
 public final class ChatMessageDiffUtil extends DiffUtil.Callback {
 
@@ -37,6 +36,7 @@ public final class ChatMessageDiffUtil extends DiffUtil.Callback {
 	public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
 		ChatItem oldProduct = oldList.get(oldItemPosition);
 		ChatItem newProduct = newList.get(newItemPosition);
+		// here should be checked only variables which affect UI
 		return oldProduct.equals(newProduct);
 	}
 }

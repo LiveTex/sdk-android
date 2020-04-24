@@ -7,9 +7,11 @@ import java.util.Map;
 
 import androidx.annotation.Nullable;
 import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import okio.ByteString;
+import ru.livetex.sdk.BuildConfig;
 import ru.livetex.sdk.entity.AttributesEntity;
 import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
@@ -34,11 +36,25 @@ public class LiveTexMessagesHandler {
 	private final PublishSubject<EmployeeTypingEvent> employeeTypingSubject = PublishSubject.create();
 	private final PublishSubject<AttributesRequest> attributesRequestSubject = PublishSubject.create();
 	private final PublishSubject<DepartmentRequestEntity> departmentRequestSubject = PublishSubject.create();
-	// todo: clear and dispose on websocket disconnect
 	private final HashMap<String, Subject> subscriptions = new HashMap<>();
 
 	// todo: customizable
 	private final EntityMapper mapper = new EntityMapper();
+	private boolean specialDisconnect = true;
+
+	public void init() {
+		Disposable disposable = NetworkManager.getInstance().connectionState()
+				.filter(state -> state == NetworkManager.ConnectionState.DISCONNECTED)
+				.subscribe(ignore -> {
+					Log.i(TAG, "Disconnect detected, clearing subscriptions");
+					for (Subject subj : subscriptions.values()) {
+						if (!subj.hasComplete()) {
+							subj.onError(new IllegalStateException("Websocket disconnect"));
+						}
+					}
+					subscriptions.clear();
+				}, thr -> Log.e(TAG, "", thr));
+	}
 
 	public synchronized void onMessage(String text) {
 		Log.d(TAG, "onMessage " + text);
@@ -109,15 +125,6 @@ public class LiveTexMessagesHandler {
 		return sendAndSubscribe(json, event.correlationId);
 	}
 
-	private Single<ResponseEntity> sendAndSubscribe(String json, String correlationId) {
-		Subject<ResponseEntity> subscription = PublishSubject.create();
-		if (NetworkManager.getInstance().getWebSocket() != null) {
-			subscriptions.put(correlationId, subscription);
-			sendJson(json);
-		}
-		return subscription.take(1).singleOrError();
-	}
-
 	public PublishSubject<BaseEntity> entity() {
 		return entitySubject;
 	}
@@ -144,6 +151,27 @@ public class LiveTexMessagesHandler {
 
 	public void onDataMessage(ByteString bytes) {
 		// not used
+	}
+
+	private Single<ResponseEntity> sendAndSubscribe(String json, String correlationId) {
+		Subject<ResponseEntity> subscription = PublishSubject.create();
+		if (NetworkManager.getInstance().getWebSocket() != null) {
+			subscriptions.put(correlationId, subscription);
+			try {
+				sendJson(json);
+			} catch (Exception e) {
+				return Single.error(e);
+			}
+			// todo: remove
+			if (BuildConfig.DEBUG && json.contains("Disc") && specialDisconnect) {
+				specialDisconnect = false;
+				NetworkManager.getInstance().forceDisconnect();
+				return Single.error(new IllegalStateException("disconnect"));
+			}
+			return subscription.take(1).singleOrError();
+		} else {
+			return Single.error(new IllegalStateException("Trying to send data when websocket is null"));
+		}
 	}
 
 	private void sendJson(String json) {

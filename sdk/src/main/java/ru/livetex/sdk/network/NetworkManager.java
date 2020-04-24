@@ -28,6 +28,7 @@ public final class NetworkManager {
 	private final CompositeDisposable disposables = new CompositeDisposable();
 
 	public enum ConnectionState {
+		NOT_STARTED, // initial state
 		DISCONNECTED,
 		CONNECTING,
 		CONNECTED
@@ -35,13 +36,16 @@ public final class NetworkManager {
 
 	@Nullable
 	private WebSocket webSocket = null;
-	private BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.DISCONNECTED);
+	private boolean needReconnect = true;
+	private BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
 	@NonNull
 	private final String touchpoint;
 	@Nullable
 	private String deviceId;
 	@Nullable
 	private String deviceType;
+	@Nullable
+	private String lastClientId = null;
 
 	private NetworkManager(@NonNull String host,
 						   @NonNull String touchpoint,
@@ -53,6 +57,42 @@ public final class NetworkManager {
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;
 		this.websocketListener = websocketListener;
+
+		disposables.add(websocketListener.disconnectEvent()
+				.observeOn(Schedulers.io())
+				.subscribe(ws -> {
+					if (ws == webSocket) {
+						webSocket = null;
+						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+
+						if (needReconnect) {
+							connectWebSocket();
+						}
+					}
+				}, thr -> Log.e(TAG, "disconnectEvent", thr)));
+
+		disposables.add(websocketListener.openEvent()
+				.observeOn(Schedulers.io())
+				.subscribe(ws -> {
+					if (ws == webSocket) {
+						connectionStateSubject.onNext(ConnectionState.CONNECTED);
+					}
+				}, thr -> Log.e(TAG, "openEvent", thr)));
+
+		disposables.add(websocketListener.failEvent()
+				.observeOn(Schedulers.io())
+				.subscribe(ws -> {
+					if (ws == webSocket) {
+						webSocket = null;
+						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+						needReconnect = false;
+
+						// can be endless loop
+//						if (needReconnect) {
+//							connectWebSocket();
+//						}
+					}
+				}, thr -> Log.e(TAG, "failEvent", thr)));
 	}
 
 	public static void init(@NonNull String host,
@@ -61,6 +101,7 @@ public final class NetworkManager {
 							String deviceType,
 							LiveTexWebsocketListener websocketListener) {
 		instance = new NetworkManager(host, touchpoint, deviceId, deviceType, websocketListener);
+		websocketListener.getMessagesHandler().init();
 	}
 
 	public static NetworkManager getInstance() {
@@ -73,38 +114,25 @@ public final class NetworkManager {
 
 	public Single<String> connect(@Nullable String clientId) {
 		return Single.fromCallable(() -> {
-			String finalClientId = auth(touchpoint, clientId, deviceId, deviceType);
-			connectWebSocket(finalClientId);
-			return finalClientId;
+			lastClientId = auth(touchpoint, clientId, deviceId, deviceType);
+			connectWebSocket();
+			return lastClientId;
 		});
 	}
 
-	private void connectWebSocket(@NonNull String clientId) throws IOException {
+	private void connectWebSocket() throws IOException {
 		if (webSocket != null) {
 			Log.e(TAG, "connect: websocket is active!");
 			return;
 		}
 		connectionStateSubject.onNext(ConnectionState.CONNECTING);
 
-		String url = getWebsocketEndpoint().replace("{clientId}", clientId);
+		String url = getWebsocketEndpoint().replace("{clientId}", lastClientId);
 
 		Request request = new Request.Builder()
 				.url(url)
 				.build();
 		webSocket = okHttpManager.webSocketConnection(request, websocketListener);
-
-		connectionStateSubject.onNext(ConnectionState.CONNECTED);
-
-		disposables.add(websocketListener.disconnectEvent()
-				.observeOn(Schedulers.io())
-				.subscribe(ws -> {
-					if (ws == webSocket) {
-						webSocket = null;
-						disposables.clear();
-						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						// todo: reconnect if need
-					}
-				}, thr -> Log.e(TAG, "", thr)));
 	}
 
 	private String auth(@NonNull String touchpoint,
@@ -135,13 +163,16 @@ public final class NetworkManager {
 		return okHttpManager.requestString(rb.build());
 	}
 
-	public void disconnect() {
+	public void forceDisconnect() {
+		//needReconnect = false; todo: enable
 		if (webSocket != null) {
+			Log.i(TAG, "Disconnecting websocket...");
 			webSocket.close(1000, "disconnect requested");
 			connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-			webSocket = null;
+		} else {
+			Log.i(TAG, "Websocket disconnect requested but websocket is null");
 		}
-		disposables.clear();
+		//disposables.clear(); todo: enable
 	}
 
 	@Nullable

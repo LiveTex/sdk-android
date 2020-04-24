@@ -15,6 +15,8 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 
 	private final LiveTexMessagesHandler messageHandler;
 	private final PublishSubject<WebSocket> disconnectEvent = PublishSubject.create();
+	private final PublishSubject<WebSocket> openEvent = PublishSubject.create();
+	private final PublishSubject<WebSocket> failEvent = PublishSubject.create();
 
 	public LiveTexWebsocketListener(LiveTexMessagesHandler messageHandler) {
 		this.messageHandler = messageHandler;
@@ -23,6 +25,7 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 	@Override
 	public void onOpen(WebSocket webSocket, Response response) {
 		Log.i(TAG, "opened");
+		openEvent.onNext(webSocket);
 	}
 
 	@Override
@@ -46,7 +49,26 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 		disconnectEvent.onNext(webSocket);
 	}
 
+	@Override
+	public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+		Log.e(TAG, "failed with reason " + t.getMessage(), t);
+		failEvent.onNext(webSocket);
+	}
+
+	// Should be used only by NetworkManager because in case of force disconnect it doesn't trigger!
 	public PublishSubject<WebSocket> disconnectEvent() {
 		return disconnectEvent;
+	}
+
+	public PublishSubject<WebSocket> openEvent() {
+		return openEvent;
+	}
+
+	public PublishSubject<WebSocket> failEvent() {
+		return failEvent;
+	}
+
+	public LiveTexMessagesHandler getMessagesHandler() {
+		return messageHandler;
 	}
 }

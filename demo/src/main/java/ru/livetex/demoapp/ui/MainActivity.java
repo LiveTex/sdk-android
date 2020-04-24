@@ -40,6 +40,7 @@ import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.Mapper;
 import ru.livetex.demoapp.db.entity.ChatMessage;
+import ru.livetex.demoapp.db.entity.MessageSentState;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
@@ -94,6 +95,16 @@ public class MainActivity extends AppCompatActivity {
 
 	private void setupUI() {
 		setupInput();
+
+		adapter.setOnMessageClickListener(item -> {
+			// Try to re-send failed message
+			if (item.sentState == MessageSentState.FAILED) {
+				ChatMessage message = ChatState.instance.getMessage(item.id);
+				if (message != null) {
+					sendMessage(message);
+				}
+			}
+		});
 
 		messagesView.setAdapter(adapter);
 		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(messagesView.getContext(),
@@ -166,32 +177,6 @@ public class MainActivity extends AppCompatActivity {
 		});
 	}
 
-	private void sendMessage() {
-		String text = inputView.getText().toString().trim();
-
-		if (TextUtils.isEmpty(text)) {
-			Toast.makeText(this, "Message is empty", Toast.LENGTH_SHORT).show();
-			return;
-		}
-
-		ChatMessage chatMessage = ChatState.instance.createNewMessage(text);
-		inputView.setText(null);
-
-		Disposable d = messagesHandler.sendTextEvent(text)
-				.subscribeOn(Schedulers.io())
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(resp -> {
-					ChatState.instance.removeMessage(chatMessage);
-					chatMessage.id = resp.sentMessage.id;
-					// server time considered as correct one
-					// also this is time when message was actually sent, not created
-					chatMessage.createdAt = resp.sentMessage.createdAt;
-
-					// in real project here should be saving (upsert) in persistent storage
-					ChatState.instance.addMessage(chatMessage);
-				}, thr -> Log.e(TAG, "", thr));
-	}
-
 	/**
 	 * Subscribe to connection state and chat events. Should be done before connect.
 	 */
@@ -253,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
 	private void onDepartmentRequest(DepartmentRequestEntity departmentRequestEntity) {
 		List<Department> departments = departmentRequestEntity.departments;
 
-		// For test only
+		// For test only // todo: remove
 		if (BuildConfig.DEBUG) {
 			departments.add(new Department("Тайная комната"));
 		}
@@ -281,6 +266,49 @@ public class MainActivity extends AppCompatActivity {
 		dialog.show();
 	}
 
+	private void sendMessage() {
+		String text = inputView.getText().toString().trim();
+
+		if (TextUtils.isEmpty(text)) {
+			Toast.makeText(this, "Введите сообщение", Toast.LENGTH_SHORT).show();
+			return;
+		}
+
+		ChatMessage chatMessage = ChatState.instance.createNewMessage(text);
+		inputView.setText(null);
+
+		sendMessage(chatMessage);
+	}
+
+	private void sendMessage(ChatMessage chatMessage) {
+		Disposable d = messagesHandler.sendTextEvent(chatMessage.content)
+				.doOnSubscribe(ignore -> {
+					chatMessage.setSentState(MessageSentState.SENDING);
+					ChatState.instance.updateMessage(chatMessage);
+				})
+				.subscribeOn(Schedulers.io())
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(resp -> {
+					// remove message with local id
+					ChatState.instance.removeMessage(chatMessage.id);
+
+					chatMessage.id = resp.sentMessage.id;
+					chatMessage.setSentState(MessageSentState.SENT);
+					// server time considered as correct one
+					// also this is time when message was actually sent, not created
+					chatMessage.createdAt = resp.sentMessage.createdAt;
+
+					// in real project here should be saving (upsert) in persistent storage
+					ChatState.instance.addMessage(chatMessage);
+				}, thr -> {
+					Log.e(TAG, "sendMessage", thr);
+					Toast.makeText(this, "Ошибка отправки " + thr.getMessage(), Toast.LENGTH_LONG).show();
+
+					chatMessage.setSentState(MessageSentState.FAILED);
+					ChatState.instance.updateMessage(chatMessage);
+				});
+	}
+
 	private void selectDepartment(Department department) {
 		Disposable d = messagesHandler.sendDepartmentSelectionEvent(department.id)
 				.subscribeOn(Schedulers.io())
@@ -299,10 +327,12 @@ public class MainActivity extends AppCompatActivity {
 	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {
 		switch (connectionState) {
 			case DISCONNECTED:
+				Toast.makeText(this, "Вебсокет отключен", Toast.LENGTH_SHORT).show();
 				break;
 			case CONNECTING:
 				break;
 			case CONNECTED: {
+				Toast.makeText(this, "Вебсокет подключен", Toast.LENGTH_SHORT).show();
 				break;
 			}
 		}
@@ -312,6 +342,7 @@ public class MainActivity extends AppCompatActivity {
 	protected void onDestroy() {
 		super.onDestroy();
 		disposables.clear();
+		NetworkManager.getInstance().forceDisconnect();
 	}
 
 	private void connect() {

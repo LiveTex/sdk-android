@@ -53,7 +53,7 @@ final class OkHttpManager {
 		return response.body().string();
 	}
 
-	WebSocket webSocketConnection(Request request, WebSocketListener listener) throws IOException {
+	WebSocket webSocketConnection(Request request, WebSocketListener listener) {
 		okhttp3.Request.Builder builder = new okhttp3.Request.Builder();
 		builder.url(request.url());
 		builder.headers(request.headers());
