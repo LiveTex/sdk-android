@@ -71,9 +71,14 @@ public class LiveTexMessagesHandler {
 		Subject subscription = subscriptions.get(entity.correlationId);
 
 		if (subscription != null) {
-			subscription.onNext(entity);
-			subscription.onComplete();
-			subscriptions.remove(entity.correlationId);
+			// Currently client need to handle only first response to request. Another "responses" have only human logic meaning.
+			if (entity instanceof ResponseEntity) {
+				if (!subscription.hasComplete()) {
+					subscription.onNext(entity);
+					subscription.onComplete();
+				}
+				subscriptions.remove(entity.correlationId);
+			}
 		}
 	}
 
