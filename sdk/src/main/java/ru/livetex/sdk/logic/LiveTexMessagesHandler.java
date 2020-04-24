@@ -40,7 +40,7 @@ public class LiveTexMessagesHandler {
 	// todo: customizable
 	private final EntityMapper mapper = new EntityMapper();
 
-	public void onMessage(String text) {
+	public synchronized void onMessage(String text) {
 		Log.d(TAG, "onMessage " + text);
 		BaseEntity entity = null;
 

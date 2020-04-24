@@ -10,12 +10,16 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -60,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
 	private Toolbar toolbarView;
 	private EditText inputView;
 	private RecyclerView messagesView;
+	private ImageView employeeAvatar;
 
 	private SharedPreferences sp;
 	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
@@ -80,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
 		toolbarView = findViewById(R.id.toolbarView);
 		inputView = findViewById(R.id.inputView);
 		messagesView = findViewById(R.id.messagesView);
+		employeeAvatar = findViewById(R.id.employeeAvatar);
 
 		setupUI();
 		subscribe();
@@ -319,6 +325,16 @@ public class MainActivity extends AppCompatActivity {
 	private void updateDialogState(DialogState dialogState) {
 		if (dialogState.employee != null) {
 			toolbarView.setTitle(dialogState.employee.name);
+			if (!TextUtils.isEmpty(dialogState.employee.avatarUrl)) {
+				Glide.with(this)
+						.load(dialogState.employee.avatarUrl)
+						.centerCrop()
+						.dontAnimate()
+						.apply(RequestOptions.circleCropTransform())
+						.into(employeeAvatar);
+			} else {
+				employeeAvatar.setImageDrawable(null);
+			}
 		} else {
 			toolbarView.setTitle("Диалог");
 		}
