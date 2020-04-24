@@ -11,9 +11,9 @@ todo: описать
 Делается это в Application классе
 ([например App.java](demo/src/main/java/ru/livetex/demoapp/App.java)).
 
-`		new LiveTex.Builder(Const.HOST, Const.TOUCHPOINT).build();`
+`		new LiveTex.Builder(Const.TOUCHPOINT).build();`
 
-Укажите адрес сервера (будет зашито или опционально) и Touchpoint
+Укажите Touchpoint
 (берется в личном кабинете)
 
 **Использование**
