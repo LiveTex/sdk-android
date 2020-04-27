@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
 	private Toolbar toolbarView;
 	private EditText inputView;
 	private RecyclerView messagesView;
-	private ImageView employeeAvatar;
+	private ImageView employeeAvatarView;
 
 	private SharedPreferences sp;
 	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
 		toolbarView = findViewById(R.id.toolbarView);
 		inputView = findViewById(R.id.inputView);
 		messagesView = findViewById(R.id.messagesView);
-		employeeAvatar = findViewById(R.id.employeeAvatar);
+		employeeAvatarView = findViewById(R.id.employeeAvatarView);
 
 		setupUI();
 		subscribe();
@@ -359,12 +359,14 @@ public class MainActivity extends AppCompatActivity {
 			if (!TextUtils.isEmpty(dialogState.employee.avatarUrl)) {
 				Glide.with(this)
 						.load(dialogState.employee.avatarUrl)
+						.placeholder(R.drawable.ic_user)
+						.error(R.drawable.ic_user)
 						.centerCrop()
 						.dontAnimate()
 						.apply(RequestOptions.circleCropTransform())
-						.into(employeeAvatar);
+						.into(employeeAvatarView);
 			} else {
-				employeeAvatar.setImageDrawable(null);
+				employeeAvatarView.setImageResource(R.drawable.ic_user);
 			}
 		} else {
 			toolbarView.setTitle("Диалог");
