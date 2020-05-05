@@ -9,19 +9,29 @@ public final class DialogState extends BaseEntity {
 	public static final String TYPE = "state";
 
 	@NonNull
-	public DialogStatus status;
+	public DialogStatus status = DialogStatus.UNASSIGNED;
+	@NonNull
+	public EmployeeStatus employeeStatus = EmployeeStatus.OFFLINE;
+
 	@Nullable
 	public Employee employee;
 
 	public enum DialogStatus {
 		@SerializedName("unassigned")
-		UNASSIGNED(),
+		UNASSIGNED,
 		@SerializedName("inQueue")
-		QUEUE(),
+		QUEUE,
 		@SerializedName("assigned")
-		ASSIGNED(),
+		ASSIGNED,
 		@SerializedName("aiBot")
-		BOT();
+		BOT
+	}
+
+	public enum EmployeeStatus {
+		@SerializedName("online")
+		ONLINE,
+		@SerializedName("offline")
+		OFFLINE
 	}
 
 	@Override

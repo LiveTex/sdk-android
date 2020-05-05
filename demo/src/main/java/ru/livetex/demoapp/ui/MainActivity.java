@@ -370,6 +370,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 		} else {
 			toolbarView.setTitle("Диалог");
+			employeeAvatarView.setImageResource(R.drawable.ic_user);
 		}
 
 		switch (dialogState.status) {
@@ -380,7 +381,14 @@ public class MainActivity extends AppCompatActivity {
 				toolbarView.setSubtitle("Диалог в очереди");
 				break;
 			case ASSIGNED:
-				toolbarView.setSubtitle("Диалог с оператором");
+				switch (dialogState.employeeStatus) {
+					case ONLINE:
+						toolbarView.setSubtitle("Онлайн");
+						break;
+					case OFFLINE:
+						toolbarView.setSubtitle("Оффлайн");
+						break;
+				}
 				break;
 			case BOT:
 				toolbarView.setSubtitle("Диалог с ботом");

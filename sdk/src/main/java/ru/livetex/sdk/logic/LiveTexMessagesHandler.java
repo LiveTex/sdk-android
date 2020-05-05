@@ -91,7 +91,6 @@ public class LiveTexMessagesHandler {
 			if (entity instanceof ResponseEntity) {
 				if (!subscription.hasComplete()) {
 					subscription.onNext(entity);
-					subscription.onComplete();
 				}
 				subscriptions.remove(entity.correlationId);
 			}
