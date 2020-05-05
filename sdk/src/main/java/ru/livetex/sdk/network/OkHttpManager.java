@@ -48,7 +48,7 @@ final class OkHttpManager {
 
 		Response response = client.newCall(okRequest).execute();
 		if (!response.isSuccessful()) {
-			throw new IOException("Unexpected code " + response);
+			throw new IOException("Unexpected code " + response.code() + ", message " + response.message());
 		}
 		return response.body().string();
 	}

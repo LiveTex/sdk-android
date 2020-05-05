@@ -397,8 +397,8 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void onAuthError(Throwable e) {
-		Log.e(TAG, "", e);
-		Toast.makeText(this, "Ошибка соединения " + e.getMessage(), Toast.LENGTH_SHORT).show();
+		Log.e(TAG, "onAuthError", e);
+		Toast.makeText(this, "Ошибка соединения " + e.getMessage(), Toast.LENGTH_LONG).show();
 	}
 
 	private void onAuthSuccess(String clientId) {
