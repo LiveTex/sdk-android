@@ -1,6 +1,7 @@
 package ru.livetex.sdk.network.websocket;
 
 import android.util.Log;
+import android.util.Pair;
 
 import io.reactivex.subjects.PublishSubject;
 import okhttp3.Response;
@@ -19,7 +20,7 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 
 	private final PublishSubject<WebSocket> disconnectEvent = PublishSubject.create();
 	private final PublishSubject<WebSocket> openEvent = PublishSubject.create();
-	private final PublishSubject<WebSocket> failEvent = PublishSubject.create();
+	private final PublishSubject<Pair<WebSocket, Throwable>> failEvent = PublishSubject.create();
 
 	public void init() {
 		this.messageHandler = LiveTex.getInstance().getMessagesHandler();
@@ -63,7 +64,7 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 		if (LOGGING) {
 			Log.e(TAG, "Failed with reason " + t.getMessage(), t);
 		}
-		failEvent.onNext(webSocket);
+		failEvent.onNext(Pair.create(webSocket, t));
 	}
 
 	// Should be used only by NetworkManager because in case of force disconnect it doesn't trigger!
@@ -75,7 +76,7 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 		return openEvent;
 	}
 
-	public PublishSubject<WebSocket> failEvent() {
+	public PublishSubject<Pair<WebSocket, Throwable>> failEvent() {
 		return failEvent;
 	}
 }

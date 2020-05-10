@@ -4,6 +4,8 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -169,16 +171,22 @@ public final class NetworkManager {
 
 		disposables.add(websocketListener.failEvent()
 				.observeOn(Schedulers.io())
-				.subscribe(ws -> {
+				.subscribe(pair -> {
+					WebSocket ws = pair.first;
+					Throwable thr = pair.second;
 					if (ws == webSocket) {
 						webSocket = null;
 						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						needReconnect = false;
+						needReconnect = thr instanceof SocketTimeoutException;
 
-						// can be endless loop
-//						if (needReconnect) {
-//							connectWebSocket();
-//						}
+						// can be endless loop, so handle only SocketTimeoutException
+						if (needReconnect) {
+							disposables.add(Single.timer(3, TimeUnit.SECONDS)
+									.observeOn(Schedulers.io())
+									.subscribe(ignore -> {
+										connectWebSocket();
+									}, thr1 -> Log.e(TAG, "reconnect", thr1)));
+						}
 					}
 				}, thr -> Log.e(TAG, "failEvent", thr)));
 	}
