@@ -10,10 +10,12 @@ public final class LiveTex {
 
 	private static LiveTex instance = null;
 
+	private final LiveTexWebsocketListener websocketListener;
 	private final LiveTexMessagesHandler messagesHandler;
 
 	private LiveTex(Builder builder) {
 		this.messagesHandler = builder.messageHandler;
+		this.websocketListener = builder.websocketListener;
 	}
 
 	public static LiveTex getInstance() {
@@ -31,6 +33,10 @@ public final class LiveTex {
 		return messagesHandler;
 	}
 
+	public LiveTexWebsocketListener getWebsocketListener() {
+		return websocketListener;
+	}
+
 	public static class Builder {
 		@NonNull
 		private String host = "sdk-mock.livetex.ru/";
@@ -42,7 +48,7 @@ public final class LiveTex {
 		private String deviceType = null;
 
 		private LiveTexMessagesHandler messageHandler = new LiveTexMessagesHandler();
-		private LiveTexWebsocketListener websocketListener = new LiveTexWebsocketListener(messageHandler);
+		private LiveTexWebsocketListener websocketListener = new LiveTexWebsocketListener();
 
 		public Builder(@NonNull String touchpoint) {
 			this.touchpoint = touchpoint;
@@ -58,7 +64,7 @@ public final class LiveTex {
 		}
 
 		/**
-		 * Set custom MessagesHandler
+		 * Set custom messages handler
 		 */
 		public Builder setMessageHandler(LiveTexMessagesHandler messageHandler) {
 			this.messageHandler = messageHandler;
@@ -67,7 +73,6 @@ public final class LiveTex {
 
 		/**
 		 * Set custom websocket listener
-		 * @param websocketListener
 		 */
 		public Builder setWebsocketListener(LiveTexWebsocketListener websocketListener) {
 			this.websocketListener = websocketListener;
@@ -75,8 +80,10 @@ public final class LiveTex {
 		}
 
 		public void build() {
-			NetworkManager.init(host, touchpoint, deviceId, deviceType, websocketListener);
 			instance = new LiveTex(this);
+			NetworkManager.init(host, touchpoint, deviceId, deviceType);
+			messageHandler.init();
+			websocketListener.init();
 		}
 	}
 }

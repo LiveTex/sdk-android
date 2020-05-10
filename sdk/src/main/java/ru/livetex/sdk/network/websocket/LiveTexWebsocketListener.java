@@ -7,24 +7,29 @@ import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
+import ru.livetex.sdk.BuildConfig;
+import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 
-// todo: logging flag
 public class LiveTexWebsocketListener extends WebSocketListener {
-	private static final String TAG = "LTWebsocketListener";
+	protected static final String TAG = "LTWebsocketListener";
+	protected static final Boolean LOGGING = BuildConfig.DEBUG;
 
-	private final LiveTexMessagesHandler messageHandler;
+	protected LiveTexMessagesHandler messageHandler;
+
 	private final PublishSubject<WebSocket> disconnectEvent = PublishSubject.create();
 	private final PublishSubject<WebSocket> openEvent = PublishSubject.create();
 	private final PublishSubject<WebSocket> failEvent = PublishSubject.create();
 
-	public LiveTexWebsocketListener(LiveTexMessagesHandler messageHandler) {
-		this.messageHandler = messageHandler;
+	public void init() {
+		this.messageHandler = LiveTex.getInstance().getMessagesHandler();
 	}
 
 	@Override
 	public void onOpen(WebSocket webSocket, Response response) {
-		Log.i(TAG, "opened");
+		if (LOGGING) {
+			Log.i(TAG, "Opened");
+		}
 		openEvent.onNext(webSocket);
 	}
 
@@ -40,18 +45,24 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 
 	@Override
 	public void onClosing(WebSocket webSocket, int code, String reason) {
-		Log.i(TAG, "closing with reason " + reason);
+		if (LOGGING) {
+			Log.i(TAG, "Closing with reason " + reason);
+		}
 	}
 
 	@Override
 	public void onClosed(WebSocket webSocket, int code, String reason) {
-		Log.i(TAG, "closed with reason " + reason);
+		if (LOGGING) {
+			Log.i(TAG, "Closed with reason " + reason);
+		}
 		disconnectEvent.onNext(webSocket);
 	}
 
 	@Override
 	public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-		Log.e(TAG, "failed with reason " + t.getMessage(), t);
+		if (LOGGING) {
+			Log.e(TAG, "Failed with reason " + t.getMessage(), t);
+		}
 		failEvent.onNext(webSocket);
 	}
 
@@ -66,9 +77,5 @@ public class LiveTexWebsocketListener extends WebSocketListener {
 
 	public PublishSubject<WebSocket> failEvent() {
 		return failEvent;
-	}
-
-	public LiveTexMessagesHandler getMessagesHandler() {
-		return messageHandler;
 	}
 }

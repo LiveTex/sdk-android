@@ -15,6 +15,7 @@ import io.reactivex.subjects.BehaviorSubject;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.WebSocket;
+import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.network.websocket.LiveTexWebsocketListener;
 
 public final class NetworkManager {
@@ -50,58 +51,20 @@ public final class NetworkManager {
 	private NetworkManager(@NonNull String host,
 						   @NonNull String touchpoint,
 						   @Nullable String deviceId,
-						   @Nullable String deviceType,
-						   LiveTexWebsocketListener websocketListener) {
+						   @Nullable String deviceType) {
 		this.HOST = host;
 		this.touchpoint = touchpoint;
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;
-		this.websocketListener = websocketListener;
-
-		disposables.add(websocketListener.disconnectEvent()
-				.observeOn(Schedulers.io())
-				.subscribe(ws -> {
-					if (ws == webSocket) {
-						webSocket = null;
-						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-
-						if (needReconnect) {
-							connectWebSocket();
-						}
-					}
-				}, thr -> Log.e(TAG, "disconnectEvent", thr)));
-
-		disposables.add(websocketListener.openEvent()
-				.observeOn(Schedulers.io())
-				.subscribe(ws -> {
-					if (ws == webSocket) {
-						connectionStateSubject.onNext(ConnectionState.CONNECTED);
-					}
-				}, thr -> Log.e(TAG, "openEvent", thr)));
-
-		disposables.add(websocketListener.failEvent()
-				.observeOn(Schedulers.io())
-				.subscribe(ws -> {
-					if (ws == webSocket) {
-						webSocket = null;
-						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						needReconnect = false;
-
-						// can be endless loop
-//						if (needReconnect) {
-//							connectWebSocket();
-//						}
-					}
-				}, thr -> Log.e(TAG, "failEvent", thr)));
+		this.websocketListener = LiveTex.getInstance().getWebsocketListener();
+		subscribeToWebsocket();
 	}
 
 	public static void init(@NonNull String host,
 							@NonNull String touchpoint,
 							String deviceId,
-							String deviceType,
-							LiveTexWebsocketListener websocketListener) {
-		instance = new NetworkManager(host, touchpoint, deviceId, deviceType, websocketListener);
-		websocketListener.getMessagesHandler().init();
+							String deviceType) {
+		instance = new NetworkManager(host, touchpoint, deviceId, deviceType);
 	}
 
 	public static NetworkManager getInstance() {
@@ -122,7 +85,11 @@ public final class NetworkManager {
 
 	private void connectWebSocket() throws IOException {
 		if (webSocket != null) {
-			Log.e(TAG, "connect: websocket is active!");
+			Log.e(TAG, "Connect: websocket is active!");
+			return;
+		}
+		if (lastClientId == null) {
+			Log.e(TAG, "Connect: client id is null");
 			return;
 		}
 		connectionStateSubject.onNext(ConnectionState.CONNECTING);
@@ -158,13 +125,12 @@ public final class NetworkManager {
 				.url(url)
 				.get();
 
-		// todo: error handling
-		// todo: in future here we can receive new host for weboscket connection, so HOST variable can be updated
+		// in future here we can receive new host for weboscket connection, so HOST variable can be updated
 		return okHttpManager.requestString(rb.build());
 	}
 
 	public void forceDisconnect() {
-		//needReconnect = false; todo: enable
+		needReconnect = false;
 		if (webSocket != null) {
 			Log.i(TAG, "Disconnecting websocket...");
 			webSocket.close(1000, "disconnect requested");
@@ -172,12 +138,49 @@ public final class NetworkManager {
 		} else {
 			Log.i(TAG, "Websocket disconnect requested but websocket is null");
 		}
-		//disposables.clear(); todo: enable
 	}
 
 	@Nullable
 	public WebSocket getWebSocket() {
 		return webSocket;
+	}
+
+	private void subscribeToWebsocket() {
+		disposables.add(websocketListener.disconnectEvent()
+				.observeOn(Schedulers.io())
+				.subscribe(ws -> {
+					if (ws == webSocket) {
+						webSocket = null;
+						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+
+						if (needReconnect) {
+							connectWebSocket();
+						}
+					}
+				}, thr -> Log.e(TAG, "disconnectEvent", thr)));
+
+		disposables.add(websocketListener.openEvent()
+				.observeOn(Schedulers.io())
+				.subscribe(ws -> {
+					if (ws == webSocket) {
+						connectionStateSubject.onNext(ConnectionState.CONNECTED);
+					}
+				}, thr -> Log.e(TAG, "openEvent", thr)));
+
+		disposables.add(websocketListener.failEvent()
+				.observeOn(Schedulers.io())
+				.subscribe(ws -> {
+					if (ws == webSocket) {
+						webSocket = null;
+						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+						needReconnect = false;
+
+						// can be endless loop
+//						if (needReconnect) {
+//							connectWebSocket();
+//						}
+					}
+				}, thr -> Log.e(TAG, "failEvent", thr)));
 	}
 
 	private String getApiHost() {

@@ -11,7 +11,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import io.reactivex.subjects.Subject;
 import okio.ByteString;
-import ru.livetex.sdk.BuildConfig;
 import ru.livetex.sdk.entity.AttributesEntity;
 import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
@@ -25,10 +24,8 @@ import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
 import ru.livetex.sdk.network.NetworkManager;
 
-// todo: interface
 public class LiveTexMessagesHandler {
-
-	private final String TAG = "MessagesHandler";
+	protected final String TAG = "MessagesHandler";
 
 	private final PublishSubject<BaseEntity> entitySubject = PublishSubject.create();
 	private final PublishSubject<DialogState> dialogStateSubject = PublishSubject.create();
@@ -36,11 +33,9 @@ public class LiveTexMessagesHandler {
 	private final PublishSubject<EmployeeTypingEvent> employeeTypingSubject = PublishSubject.create();
 	private final PublishSubject<AttributesRequest> attributesRequestSubject = PublishSubject.create();
 	private final PublishSubject<DepartmentRequestEntity> departmentRequestSubject = PublishSubject.create();
-	private final HashMap<String, Subject> subscriptions = new HashMap<>();
+	protected final HashMap<String, Subject> subscriptions = new HashMap<>();
 
-	// todo: customizable
-	private final EntityMapper mapper = new EntityMapper();
-	private boolean specialDisconnect = true;
+	protected EntityMapper mapper = new EntityMapper();
 
 	public void init() {
 		Disposable disposable = NetworkManager.getInstance().connectionState()
@@ -95,6 +90,10 @@ public class LiveTexMessagesHandler {
 				subscriptions.remove(entity.correlationId);
 			}
 		}
+	}
+
+	public void setMapper(EntityMapper mapper) {
+		this.mapper = mapper;
 	}
 
 	public void sendTypingEvent(String text) {
@@ -160,12 +159,6 @@ public class LiveTexMessagesHandler {
 				sendJson(json);
 			} catch (Exception e) {
 				return Single.error(e);
-			}
-			// todo: remove
-			if (BuildConfig.DEBUG && json.contains("Disc") && specialDisconnect) {
-				specialDisconnect = false;
-				NetworkManager.getInstance().forceDisconnect();
-				return Single.error(new IllegalStateException("disconnect"));
 			}
 			return subscription.take(1).singleOrError();
 		} else {
