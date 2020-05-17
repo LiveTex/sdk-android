@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Objects;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public final class ChatMessage {
 	@NonNull
@@ -12,25 +13,35 @@ public final class ChatMessage {
 	public String content;
 	@NonNull
 	public Date createdAt; // timestamp in millis
+
+	@Nullable
+	public String fileUrl; // in case of "file" message
 	public boolean isIncoming;
 	public MessageSentState sentState;
 
-	// new local message
+	// new local text\file message
 	public ChatMessage(@NonNull String id, @NonNull String content, @NonNull Date createdAt) {
 		this.id = id;
 		this.content = content;
 		this.createdAt = createdAt;
 		this.isIncoming = false;
 		this.sentState = MessageSentState.NOT_SENT;
+		this.fileUrl = null;
 	}
 
-	// mapped from server entity
+	// mapped from server text entity
 	public ChatMessage(@NonNull String id, @NonNull String content, @NonNull Date createdAt, boolean isIncoming) {
+		this(id, content, createdAt, isIncoming, null);
+	}
+
+	// mapped from server file entity
+	public ChatMessage(@NonNull String id, @NonNull String content, @NonNull Date createdAt, boolean isIncoming, @Nullable String fileUrl) {
 		this.id = id;
 		this.content = content;
 		this.createdAt = createdAt;
 		this.isIncoming = isIncoming;
 		this.sentState = MessageSentState.SENT;
+		this.fileUrl = fileUrl;
 	}
 
 	public void setSentState(MessageSentState sentState) {

@@ -32,25 +32,47 @@
 		android:layout_width="0dp"
 		android:layout_height="0dp"
 		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-		app:layout_constraintBottom_toTopOf="@+id/inputView"
+		app:layout_constraintBottom_toTopOf="@+id/bottomView"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toBottomOf="@+id/toolbarView"
 		app:stackFromEnd="true"
 		tools:listitem="@layout/i_chat_message_in" />
 
-	<EditText
-		android:id="@+id/inputView"
+	<androidx.constraintlayout.widget.ConstraintLayout
+		android:id="@+id/bottomView"
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
-		android:background="@android:color/white"
-		android:hint="Введите текст сообщения..."
-		android:imeOptions="actionSend"
-		android:inputType="textCapSentences"
-		android:padding="10dp"
-		android:singleLine="true"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent" />
+		app:layout_constraintStart_toStartOf="parent">
+
+		<EditText
+			android:id="@+id/inputView"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:background="@android:color/white"
+			android:hint="Введите сообщение..."
+			android:imeOptions="actionSend"
+			android:inputType="textCapSentences"
+			android:paddingStart="10dp"
+			android:paddingTop="10dp"
+			android:paddingEnd="41dp"
+			android:paddingBottom="10dp"
+			android:singleLine="true"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent" />
+
+		<ImageView
+			android:id="@+id/attachmentView"
+			android:layout_width="36dp"
+			android:layout_height="36dp"
+			android:layout_marginEnd="5dp"
+			android:src="@drawable/ic_attachment"
+			app:layout_constraintBottom_toBottomOf="@+id/inputView"
+			app:layout_constraintEnd_toEndOf="@+id/inputView"
+			app:layout_constraintTop_toTopOf="@+id/inputView" />
+	</androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

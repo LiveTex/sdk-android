@@ -5,7 +5,7 @@ import java.util.Date;
 import androidx.annotation.Nullable;
 
 /**
- * Server response on most requests. Request-reponse linked via correlationId field.
+ * Server response on most requests. Request-response linked via correlationId field.
  */
 public final class ResponseEntity extends BaseEntity {
 	public static final String TYPE = "result";

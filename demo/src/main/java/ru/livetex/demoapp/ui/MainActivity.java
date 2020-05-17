@@ -1,8 +1,12 @@
 package ru.livetex.demoapp.ui;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -13,6 +17,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +25,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.tbruyelle.rxpermissions2.RxPermissions;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.DiffUtil;
@@ -28,6 +35,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
@@ -44,11 +52,13 @@ import ru.livetex.demoapp.db.entity.MessageSentState;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
+import ru.livetex.demoapp.utils.FileUtils;
 import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
+import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.LiveTexError;
@@ -59,14 +69,17 @@ import ru.livetex.sdk.network.NetworkManager;
 // todo: use ViewModel
 public class MainActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
+	private static final int PICKFILE_REQUEST_CODE = 1000;
 
 	private final CompositeDisposable disposables = new CompositeDisposable();
 
 	private Toolbar toolbarView;
 	private EditText inputView;
+	private ImageView attachmentView;
 	private RecyclerView messagesView;
 	private ImageView employeeAvatarView;
 
+	private final RxPermissions rxPermissions = new RxPermissions(this);
 	private SharedPreferences sp;
 	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
 	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
@@ -85,12 +98,68 @@ public class MainActivity extends AppCompatActivity {
 
 		toolbarView = findViewById(R.id.toolbarView);
 		inputView = findViewById(R.id.inputView);
+		attachmentView = findViewById(R.id.attachmentView);
 		messagesView = findViewById(R.id.messagesView);
 		employeeAvatarView = findViewById(R.id.employeeAvatarView);
 
 		setupUI();
 		subscribe();
 		connect();
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+
+		if (requestCode == PICKFILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
+			Uri uri = data.getData();
+			if (uri == null) {
+				Toast.makeText(this, "Не удалось открыть файл", Toast.LENGTH_SHORT).show();
+				return;
+			}
+			Disposable disposable = Single
+					.fromCallable(() -> {
+						String filePath = FileUtils.getPath(MainActivity.this, uri);
+						return filePath;
+					})
+					.subscribeOn(Schedulers.io())
+					.observeOn(AndroidSchedulers.mainThread())
+					.subscribe(path -> {
+						ChatMessage chatMessage = ChatState.instance.createNewFileMessage(path);
+						File f = new File(path);
+						Disposable d = NetworkManager.getInstance().getApiManager().uploadFile(f)
+								.doOnSubscribe(ignore -> {
+									chatMessage.setSentState(MessageSentState.SENDING);
+									ChatState.instance.updateMessage(chatMessage);
+								})
+								.subscribeOn(Schedulers.io())
+								.flatMap(messagesHandler::sendFileMessage)
+								.observeOn(AndroidSchedulers.mainThread())
+								.subscribe(resp -> {
+											// remove message with local id
+											ChatState.instance.removeMessage(chatMessage.id);
+
+											chatMessage.id = resp.sentMessage.id;
+											chatMessage.setSentState(MessageSentState.SENT);
+											// server time considered as correct one
+											// also this is time when message was actually sent, not created
+											chatMessage.createdAt = resp.sentMessage.createdAt;
+
+											// in real project here should be saving (upsert) in persistent storage
+											ChatState.instance.addMessage(chatMessage);
+										},
+										thr -> {
+											Log.e(TAG, "onFileUpload", thr);
+											Toast.makeText(this, "Ошибка отправки " + thr.getMessage(), Toast.LENGTH_LONG).show();
+
+											chatMessage.setSentState(MessageSentState.FAILED);
+											ChatState.instance.updateMessage(chatMessage);
+										});
+
+						disposables.add(d);
+					}, thr -> Log.e(TAG, "onFile", thr));
+			disposables.add(disposable);
+		}
 	}
 
 	private void setupUI() {
@@ -146,6 +215,29 @@ public class MainActivity extends AppCompatActivity {
 				return true;
 			}
 			return false;
+		});
+
+		attachmentView.setOnClickListener(v -> {
+			disposables.add(rxPermissions
+					.request(Manifest.permission.READ_EXTERNAL_STORAGE)
+					.subscribe(granted -> {
+						if (granted) {
+							Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+							intent.setType("*/*");
+							//intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+							try {
+								startActivityForResult(
+										Intent.createChooser(intent, "Выберите файл для загрузки"),
+										PICKFILE_REQUEST_CODE);
+							} catch (android.content.ActivityNotFoundException ex) {
+								Toast.makeText(this, "Установите файл менеджер",
+										Toast.LENGTH_SHORT).show();
+							}
+						} else {
+							// Oups permission denied
+						}
+					}));
 		});
 
 		Disposable disposable = textSubject
@@ -223,12 +315,14 @@ public class MainActivity extends AppCompatActivity {
 				}));
 	}
 
-	// todo: file messages
 	private void updateHistory(HistoryEntity historyEntity) {
 		List<ChatMessage> messages = new ArrayList<>();
 		for (GenericMessage genericMessage : historyEntity.messages) {
 			if (genericMessage instanceof TextMessage) {
 				ChatMessage chatMessage = Mapper.toChatMessage((TextMessage) genericMessage);
+				messages.add(chatMessage);
+			} else if (genericMessage instanceof FileMessage) {
+				ChatMessage chatMessage = Mapper.toChatMessage((FileMessage) genericMessage);
 				messages.add(chatMessage);
 			}
 		}
@@ -274,14 +368,14 @@ public class MainActivity extends AppCompatActivity {
 			return;
 		}
 
-		ChatMessage chatMessage = ChatState.instance.createNewMessage(text);
+		ChatMessage chatMessage = ChatState.instance.createNewTextMessage(text);
 		inputView.setText(null);
 
 		sendMessage(chatMessage);
 	}
 
 	private void sendMessage(ChatMessage chatMessage) {
-		Disposable d = messagesHandler.sendTextEvent(chatMessage.content)
+		Disposable d = messagesHandler.sendTextMessage(chatMessage.content)
 				.doOnSubscribe(ignore -> {
 					chatMessage.setSentState(MessageSentState.SENDING);
 					ChatState.instance.updateMessage(chatMessage);

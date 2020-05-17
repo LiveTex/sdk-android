@@ -24,9 +24,10 @@ public final class NetworkManager {
 	private static final String TAG = "NetworkManager";
 	private static NetworkManager instance;
 
-	private String HOST;
+	private String host;
 
 	private final OkHttpManager okHttpManager = new OkHttpManager();
+	private final ApiManager apiManager = new ApiManager(okHttpManager);
 	private final LiveTexWebsocketListener websocketListener;
 	private final CompositeDisposable disposables = new CompositeDisposable();
 
@@ -54,7 +55,7 @@ public final class NetworkManager {
 						   @NonNull String touchpoint,
 						   @Nullable String deviceId,
 						   @Nullable String deviceType) {
-		this.HOST = host;
+		this.host = host;
 		this.touchpoint = touchpoint;
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;
@@ -73,6 +74,10 @@ public final class NetworkManager {
 		return instance;
 	}
 
+	public ApiManager getApiManager() {
+		return apiManager;
+	}
+
 	public Observable<ConnectionState> connectionState() {
 		return connectionStateSubject;
 	}
@@ -83,6 +88,10 @@ public final class NetworkManager {
 			connectWebSocket();
 			return lastClientId;
 		});
+	}
+
+	String getApiHost() {
+		return "http://" + host + "v1/"; // todo: https
 	}
 
 	private void connectWebSocket() throws IOException {
@@ -191,11 +200,7 @@ public final class NetworkManager {
 				}, thr -> Log.e(TAG, "failEvent", thr)));
 	}
 
-	private String getApiHost() {
-		return "http://" + HOST + "v1/"; // todo: https
-	}
-
 	private String getWebsocketEndpoint() {
-		return "ws://" + HOST + "v1/ws/{clientId}"; // todo: wss
+		return "ws://" + host + "v1/ws/{clientId}"; // todo: wss
 	}
 }

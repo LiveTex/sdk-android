@@ -18,6 +18,8 @@ import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
+import ru.livetex.sdk.entity.FileMessage;
+import ru.livetex.sdk.entity.FileUploadedResponse;
 import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.ResponseEntity;
 import ru.livetex.sdk.entity.TextMessage;
@@ -111,8 +113,14 @@ public class LiveTexMessagesHandler {
 		sendJson(json);
 	}
 
-	public Single<ResponseEntity> sendTextEvent(String text) {
+	public Single<ResponseEntity> sendTextMessage(String text) {
 		TextMessage event = new TextMessage(text);
+		String json = EntityMapper.gson.toJson(event);
+		return sendAndSubscribe(json, event.correlationId);
+	}
+
+	public Single<ResponseEntity> sendFileMessage(FileUploadedResponse response) {
+		FileMessage event = new FileMessage(response);
 		String json = EntityMapper.gson.toJson(event);
 		return sendAndSubscribe(json, event.correlationId);
 	}

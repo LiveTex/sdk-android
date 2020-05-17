@@ -58,6 +58,9 @@ public class EntityMapper {
 					TextMessage message = parseTextMessage(json);
 					return message;
 				}
+				case FileMessage.TYPE: {
+					return parseFileMessage(json);
+				}
 				case TypingEvent.TYPE: {
 					return gson.fromJson(json, TypingEvent.class);
 				}
@@ -66,9 +69,6 @@ public class EntityMapper {
 				}
 				case ResponseEntity.TYPE: {
 					return gson.fromJson(json, ResponseEntity.class);
-				}
-				case FileMessage.TYPE: {
-					return parseFileMessage(json);
 				}
 				case AttributesEntity.TYPE: {
 					return gson.fromJson(json, AttributesEntity.class);

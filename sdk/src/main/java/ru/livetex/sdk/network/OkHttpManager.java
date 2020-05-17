@@ -37,6 +37,10 @@ final class OkHttpManager {
 		webSocketClient = builder.build();
 	}
 
+	OkHttpClient getClient() {
+		return client;
+	}
+
 	@WorkerThread
 	String requestString(Request request) throws IOException {
 		okhttp3.Request.Builder builder = new okhttp3.Request.Builder();

@@ -5,12 +5,12 @@ import java.util.List;
 
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.sdk.entity.Employee;
+import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.TextMessage;
 
 /**
  * Transform server entities to DB and vice versa
  */
-// todo: file messages
 public class Mapper {
 
 	public static List<ChatMessage> toChatMessages(List<TextMessage> textMessages) {
@@ -27,6 +27,16 @@ public class Mapper {
 				textMessage.createdAt,
 				textMessage.creator instanceof Employee
 				);
+		return chatMessage;
+	}
+
+	public static ChatMessage toChatMessage(FileMessage fileMessage) {
+		ChatMessage chatMessage = new ChatMessage(fileMessage.id,
+				fileMessage.name,
+				fileMessage.createdAt,
+				fileMessage.creator instanceof Employee,
+				fileMessage.url
+		);
 		return chatMessage;
 	}
 }

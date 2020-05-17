@@ -59,11 +59,27 @@ public final class ChatState {
 	 * Create local message with fake id (will be overriden by server)
 	 * // todo: id scheme need improvement. now no way to distinguish between sent and local messages (fake and not fake id)
 	 */
-	public synchronized ChatMessage createNewMessage(String text) {
+	public synchronized ChatMessage createNewTextMessage(String text) {
 		ChatMessage chatMessage = new ChatMessage(
 				UUID.randomUUID().toString(),
 				text,
 				new Date()
+		);
+		addMessage(chatMessage);
+		return chatMessage;
+	}
+
+	/**
+	 * Create local message with fake id (will be overriden by server)
+	 * // todo: id scheme need improvement. now no way to distinguish between sent and local messages (fake and not fake id)
+	 */
+	public synchronized ChatMessage createNewFileMessage(String filePath) {
+		ChatMessage chatMessage = new ChatMessage(
+				UUID.randomUUID().toString(),
+				"",
+				new Date(),
+				false,
+				filePath
 		);
 		addMessage(chatMessage);
 		return chatMessage;

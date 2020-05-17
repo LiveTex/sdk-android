@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Objects;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.db.entity.MessageSentState;
 
@@ -20,6 +21,8 @@ public class ChatItem implements Comparable<ChatItem> {
 	public Date createdAt; // timestamp in millis
 	public boolean isIncoming;
 	public MessageSentState sentState;
+	@Nullable
+	public String fileUrl; // in case of "file" message
 
 	public ChatItem(ChatMessage message) {
 		this.id = message.id;
@@ -27,6 +30,7 @@ public class ChatItem implements Comparable<ChatItem> {
 		this.createdAt = message.createdAt;
 		this.isIncoming = message.isIncoming;
 		this.sentState = message.sentState;
+		this.fileUrl = message.fileUrl;
 	}
 
 	@Override
