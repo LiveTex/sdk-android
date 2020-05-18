@@ -126,37 +126,7 @@ public class MainActivity extends AppCompatActivity {
 					.observeOn(AndroidSchedulers.mainThread())
 					.subscribe(path -> {
 						ChatMessage chatMessage = ChatState.instance.createNewFileMessage(path);
-						File f = new File(path);
-						Disposable d = NetworkManager.getInstance().getApiManager().uploadFile(f)
-								.doOnSubscribe(ignore -> {
-									chatMessage.setSentState(MessageSentState.SENDING);
-									ChatState.instance.updateMessage(chatMessage);
-								})
-								.subscribeOn(Schedulers.io())
-								.flatMap(messagesHandler::sendFileMessage)
-								.observeOn(AndroidSchedulers.mainThread())
-								.subscribe(resp -> {
-											// remove message with local id
-											ChatState.instance.removeMessage(chatMessage.id);
-
-											chatMessage.id = resp.sentMessage.id;
-											chatMessage.setSentState(MessageSentState.SENT);
-											// server time considered as correct one
-											// also this is time when message was actually sent, not created
-											chatMessage.createdAt = resp.sentMessage.createdAt;
-
-											// in real project here should be saving (upsert) in persistent storage
-											ChatState.instance.addMessage(chatMessage);
-										},
-										thr -> {
-											Log.e(TAG, "onFileUpload", thr);
-											Toast.makeText(this, "Ошибка отправки " + thr.getMessage(), Toast.LENGTH_LONG).show();
-
-											chatMessage.setSentState(MessageSentState.FAILED);
-											ChatState.instance.updateMessage(chatMessage);
-										});
-
-						disposables.add(d);
+						sendFileMessage(chatMessage);
 					}, thr -> Log.e(TAG, "onFile", thr));
 			disposables.add(disposable);
 		}
@@ -170,7 +140,11 @@ public class MainActivity extends AppCompatActivity {
 			if (item.sentState == MessageSentState.FAILED) {
 				ChatMessage message = ChatState.instance.getMessage(item.id);
 				if (message != null) {
-					sendMessage(message);
+					if (!TextUtils.isEmpty(message.fileUrl)) {
+						sendMessage(message);
+					} else {
+						sendFileMessage(message);
+					}
 				}
 			}
 		});
@@ -235,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
 										Toast.LENGTH_SHORT).show();
 							}
 						} else {
-							// Oups permission denied
+							// Oops permission denied
 						}
 					}));
 		});
@@ -401,6 +375,40 @@ public class MainActivity extends AppCompatActivity {
 					chatMessage.setSentState(MessageSentState.FAILED);
 					ChatState.instance.updateMessage(chatMessage);
 				});
+	}
+
+	private void sendFileMessage(ChatMessage chatMessage) {
+		File f = new File(chatMessage.fileUrl);
+		Disposable d = NetworkManager.getInstance().getApiManager().uploadFile(f)
+				.doOnSubscribe(ignore -> {
+					chatMessage.setSentState(MessageSentState.SENDING);
+					ChatState.instance.updateMessage(chatMessage);
+				})
+				.subscribeOn(Schedulers.io())
+				.flatMap(messagesHandler::sendFileMessage)
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(resp -> {
+							// remove message with local id
+							ChatState.instance.removeMessage(chatMessage.id);
+
+							chatMessage.id = resp.sentMessage.id;
+							chatMessage.setSentState(MessageSentState.SENT);
+							// server time considered as correct one
+							// also this is time when message was actually sent, not created
+							chatMessage.createdAt = resp.sentMessage.createdAt;
+
+							// in real project here should be saving (upsert) in persistent storage
+							ChatState.instance.addMessage(chatMessage);
+						},
+						thr -> {
+							Log.e(TAG, "onFileUpload", thr);
+							Toast.makeText(this, "Ошибка отправки " + thr.getMessage(), Toast.LENGTH_LONG).show();
+
+							chatMessage.setSentState(MessageSentState.FAILED);
+							ChatState.instance.updateMessage(chatMessage);
+						});
+
+		disposables.add(d);
 	}
 
 	private void selectDepartment(Department department) {
