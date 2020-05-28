@@ -2,7 +2,7 @@
 Android SDK и демо-приложение для нового VisitorAPI
 
 **Подключение SDK**  
-[![](https://jitpack.io/v/LiveTex/sdk-android.svg)](https://jitpack.io/#LiveTex/sdk-android)
+[![Release](https://jitpack.io/v/LiveTex/sdk-android.svg)](https://jitpack.io/#LiveTex/sdk-android)
 
 В build.gradle (который в корне проекта) добавить репозиторий jitpack
 
@@ -14,7 +14,8 @@ Android SDK и демо-приложение для нового VisitorAPI
 	}
 
 В build.gradle (который в модуле приложения) добавить зависимость SDK
-актуальной версии
+актуальной версии (см.
+[Releases](https://github.com/LiveTex/sdk-android/releases))
 
 	dependencies {
 	        implementation 'com.github.LiveTex:sdk-android:x.y'
