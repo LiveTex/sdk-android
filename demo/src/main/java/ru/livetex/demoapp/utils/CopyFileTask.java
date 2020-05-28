@@ -18,11 +18,11 @@ final class CopyFileTask {
 	private final Uri uri;
 	private InputStream is = null;
 
-	public CopyFileTask(Uri uri) {
+	CopyFileTask(Uri uri) {
 		this.uri = uri;
 	}
 
-	protected String run(Context context) {
+	String run(Context context) {
 		File file = null;
 		int size = -1;
 
@@ -58,7 +58,7 @@ final class CopyFileTask {
 			BufferedInputStream bis = new BufferedInputStream(is);
 			FileOutputStream fos = new FileOutputStream(file);
 
-			byte[] data = new byte[1024];
+			byte[] data = new byte[8192];
 			long total = 0;
 			int count;
 			while ((count = bis.read(data)) != -1) {
@@ -68,7 +68,7 @@ final class CopyFileTask {
 			fos.flush();
 			fos.close();
 		} catch (IOException e) {
-			Log.e("IOException = ", e.getMessage());
+			Log.e("CopyFileTask", e.getMessage());
 		}
 
 		return file.getAbsolutePath();

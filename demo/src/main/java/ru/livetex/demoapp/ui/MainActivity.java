@@ -42,7 +42,6 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
-import ru.livetex.demoapp.BuildConfig;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
@@ -307,9 +306,9 @@ public class MainActivity extends AppCompatActivity {
 		List<Department> departments = departmentRequestEntity.departments;
 
 		// For test only // todo: remove
-		if (BuildConfig.DEBUG) {
-			departments.add(new Department("Тайная комната"));
-		}
+//		if (BuildConfig.DEBUG) {
+//			departments.add(new Department("Тайная комната"));
+//		}
 
 		if (departments.isEmpty()) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this)
