@@ -12,7 +12,6 @@ public class App extends Application {
 
 		// init LiveTex
 		new LiveTex.Builder(Const.TOUCHPOINT)
-				.setHost(Const.HOST)
 				.build();
 	}
 }
