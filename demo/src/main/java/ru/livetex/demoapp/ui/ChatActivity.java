@@ -10,14 +10,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,47 +28,39 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
-import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.internal.functions.Functions;
+import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
-import ru.livetex.demoapp.db.Mapper;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.db.entity.MessageSentState;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
 import ru.livetex.demoapp.utils.FileUtils;
-import ru.livetex.sdk.LiveTex;
+import ru.livetex.demoapp.utils.TextWatcherAdapter;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
-import ru.livetex.sdk.entity.EmployeeTypingEvent;
-import ru.livetex.sdk.entity.FileMessage;
-import ru.livetex.sdk.entity.GenericMessage;
-import ru.livetex.sdk.entity.HistoryEntity;
-import ru.livetex.sdk.entity.LiveTexError;
-import ru.livetex.sdk.entity.TextMessage;
-import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 import ru.livetex.sdk.network.NetworkManager;
 
-// todo: use ViewModel
-public class MainActivity extends AppCompatActivity {
+public class ChatActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
 	private static final int PICKFILE_REQUEST_CODE = 1000;
 
 	private final CompositeDisposable disposables = new CompositeDisposable();
+	private ChatViewModel viewModel;
 
 	private Toolbar toolbarView;
 	private EditText inputView;
@@ -80,8 +70,6 @@ public class MainActivity extends AppCompatActivity {
 
 	private final RxPermissions rxPermissions = new RxPermissions(this);
 	private SharedPreferences sp;
-	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
-	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
 
 	private MessagesAdapter adapter = new MessagesAdapter();
 
@@ -91,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.a_main);
+		setContentView(R.layout.a_chat);
 
 		sp = getSharedPreferences("livetex-demo", Context.MODE_PRIVATE);
 
@@ -101,9 +89,25 @@ public class MainActivity extends AppCompatActivity {
 		messagesView = findViewById(R.id.messagesView);
 		employeeAvatarView = findViewById(R.id.employeeAvatarView);
 
+		viewModel = new ViewModelProvider(this).get(ChatViewModel.class);
+
 		setupUI();
-		subscribe();
+		subscribeViewModel();
 		connect();
+	}
+
+	private void subscribeViewModel() {
+		viewModel.errorLiveData.observe(this, this::onError);
+		viewModel.connectionStateLiveData.observe(this, this::onConnectionStateUpdate);
+		viewModel.departmentRequestLiveData.observe(this, this::onDepartmentRequest);
+		viewModel.dialogStateUpdateLiveData.observe(this, this::updateDialogState);
+	}
+
+	private void onError(String msg) {
+		if (TextUtils.isEmpty(msg)) {
+			return;
+		}
+		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 	}
 
 	@Override
@@ -116,18 +120,12 @@ public class MainActivity extends AppCompatActivity {
 				Toast.makeText(this, "Не удалось открыть файл", Toast.LENGTH_SHORT).show();
 				return;
 			}
-			Disposable disposable = Single
-					.fromCallable(() -> {
-						String filePath = FileUtils.getPath(MainActivity.this, uri);
-						return filePath;
-					})
+			Disposable d = Single
+					.fromCallable(() -> FileUtils.getPath(this, uri))
 					.subscribeOn(Schedulers.io())
-					.observeOn(AndroidSchedulers.mainThread())
 					.subscribe(path -> {
-						ChatMessage chatMessage = ChatState.instance.createNewFileMessage(path);
-						sendFileMessage(chatMessage);
+						viewModel.sendFile(path);
 					}, thr -> Log.e(TAG, "onFile", thr));
-			disposables.add(disposable);
 		}
 	}
 
@@ -139,11 +137,7 @@ public class MainActivity extends AppCompatActivity {
 			if (item.sentState == MessageSentState.FAILED) {
 				ChatMessage message = ChatState.instance.getMessage(item.id);
 				if (message != null) {
-					if (!TextUtils.isEmpty(message.fileUrl)) {
-						sendMessage(message);
-					} else {
-						sendFileMessage(message);
-					}
+					viewModel.resendMessage(message);
 				}
 			}
 		});
@@ -157,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
 
 		disposables.add(ChatState.instance.messages()
 				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::setMessages, thr -> Log.e(TAG, "", thr)));
+				.subscribe(this::setMessages, thr -> Log.e(TAG, "messages observe", thr)));
 	}
 
 	private void setMessages(List<ChatMessage> chatMessages) {
@@ -215,100 +209,23 @@ public class MainActivity extends AppCompatActivity {
 
 		Disposable disposable = textSubject
 				.throttleLast(TEXT_TYPING_DELAY, TimeUnit.MILLISECONDS)
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(messagesHandler::sendTypingEvent, thr -> {
-					Log.e(TAG, "", thr);
+				.observeOn(Schedulers.io())
+				.subscribe(viewModel::sendTypingEvent, thr -> {
+					Log.e(TAG, "typing observe", thr);
 				});
 		disposables.add(disposable);
 
-		inputView.addTextChangedListener(new TextWatcher() {
-			@Override
-			public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-			}
-
-			@Override
-			public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
-			}
-
+		inputView.addTextChangedListener(new TextWatcherAdapter() {
 			@Override
 			public void afterTextChanged(Editable editable) {
-				String text = editable.toString().trim();
-				// Send typing event, not faster than TEXT_TYPING_DELAY
-				if (!TextUtils.isEmpty(text)) {
-					textSubject.onNext(text);
-				}
+				// notify about typing
+				textSubject.onNext(editable.toString());
 			}
 		});
 	}
 
-	/**
-	 * Subscribe to connection state and chat events. Should be done before connect.
-	 */
-	private void subscribe() {
-		disposables.add(networkManager.connectionState()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::onConnectionStateUpdate, thr -> {
-					Log.e(TAG, "", thr);
-				}));
-
-		disposables.add(messagesHandler.history()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::updateHistory, thr -> {
-					Log.e(TAG, "", thr);
-				}));
-
-		disposables.add(messagesHandler.departmentRequest()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::onDepartmentRequest, thr -> {
-					Log.e(TAG, "", thr);
-				}));
-
-		disposables.add(messagesHandler.attributesRequest()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(attributesRequest -> {
-					Disposable d = Completable.fromAction(() -> messagesHandler.sendAttributes("Demo user", null, null, null))
-							.subscribeOn(Schedulers.io())
-							.observeOn(AndroidSchedulers.mainThread())
-							.subscribe(Functions.EMPTY_ACTION, thr -> Log.e(TAG, "", thr));
-				}, thr -> {
-					Log.e(TAG, "", thr);
-				}));
-
-		disposables.add(messagesHandler.dialogStateUpdate()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::updateDialogState, thr -> {
-					Log.e(TAG, "", thr);
-				}));
-
-		disposables.add(messagesHandler.employeeTyping()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::updateEmployeeTypingState, thr -> {
-					Log.e(TAG, "", thr);
-				}));
-	}
-
-	private void updateHistory(HistoryEntity historyEntity) {
-		List<ChatMessage> messages = new ArrayList<>();
-		for (GenericMessage genericMessage : historyEntity.messages) {
-			if (genericMessage instanceof TextMessage) {
-				ChatMessage chatMessage = Mapper.toChatMessage((TextMessage) genericMessage);
-				messages.add(chatMessage);
-			} else if (genericMessage instanceof FileMessage) {
-				ChatMessage chatMessage = Mapper.toChatMessage((FileMessage) genericMessage);
-				messages.add(chatMessage);
-			}
-		}
-		ChatState.instance.addMessages(messages);
-	}
-
 	private void onDepartmentRequest(DepartmentRequestEntity departmentRequestEntity) {
 		List<Department> departments = departmentRequestEntity.departments;
-
-		// For test only // todo: remove
-//		if (BuildConfig.DEBUG) {
-//			departments.add(new Department("Тайная комната"));
-//		}
 
 		if (departments.isEmpty()) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this)
@@ -327,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
 		builder.setTitle("Выберите комнату");
 		builder.setCancelable(false);
 		builder.setItems(departmentNames.toArray(new String[0]), (dialogInterface, i) -> {
-			selectDepartment(departments.get(i));
+			viewModel.selectDepartment(departments.get(i));
 		});
 		AlertDialog dialog = builder.create();
 		dialog.show();
@@ -344,98 +261,24 @@ public class MainActivity extends AppCompatActivity {
 		ChatMessage chatMessage = ChatState.instance.createNewTextMessage(text);
 		inputView.setText(null);
 
-		sendMessage(chatMessage);
-	}
-
-	private void sendMessage(ChatMessage chatMessage) {
-		Disposable d = messagesHandler.sendTextMessage(chatMessage.content)
-				.doOnSubscribe(ignore -> {
-					chatMessage.setSentState(MessageSentState.SENDING);
-					ChatState.instance.updateMessage(chatMessage);
-				})
-				.subscribeOn(Schedulers.io())
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(resp -> {
-					// remove message with local id
-					ChatState.instance.removeMessage(chatMessage.id);
-
-					chatMessage.id = resp.sentMessage.id;
-					chatMessage.setSentState(MessageSentState.SENT);
-					// server time considered as correct one
-					// also this is time when message was actually sent, not created
-					chatMessage.createdAt = resp.sentMessage.createdAt;
-
-					// in real project here should be saving (upsert) in persistent storage
-					ChatState.instance.addMessage(chatMessage);
-				}, thr -> {
-					Log.e(TAG, "sendMessage", thr);
-					Toast.makeText(this, "Ошибка отправки " + thr.getMessage(), Toast.LENGTH_LONG).show();
-
-					chatMessage.setSentState(MessageSentState.FAILED);
-					ChatState.instance.updateMessage(chatMessage);
-				});
-	}
-
-	private void sendFileMessage(ChatMessage chatMessage) {
-		File f = new File(chatMessage.fileUrl);
-		Disposable d = NetworkManager.getInstance().getApiManager().uploadFile(f)
-				.doOnSubscribe(ignore -> {
-					chatMessage.setSentState(MessageSentState.SENDING);
-					ChatState.instance.updateMessage(chatMessage);
-				})
-				.subscribeOn(Schedulers.io())
-				.flatMap(messagesHandler::sendFileMessage)
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(resp -> {
-							// remove message with local id
-							ChatState.instance.removeMessage(chatMessage.id);
-
-							chatMessage.id = resp.sentMessage.id;
-							chatMessage.setSentState(MessageSentState.SENT);
-							// server time considered as correct one
-							// also this is time when message was actually sent, not created
-							chatMessage.createdAt = resp.sentMessage.createdAt;
-
-							// in real project here should be saving (upsert) in persistent storage
-							ChatState.instance.addMessage(chatMessage);
-						},
-						thr -> {
-							Log.e(TAG, "onFileUpload", thr);
-							Toast.makeText(this, "Ошибка отправки " + thr.getMessage(), Toast.LENGTH_LONG).show();
-
-							chatMessage.setSentState(MessageSentState.FAILED);
-							ChatState.instance.updateMessage(chatMessage);
-						});
-
-		disposables.add(d);
-	}
-
-	private void selectDepartment(Department department) {
-		Disposable d = messagesHandler.sendDepartmentSelectionEvent(department.id)
-				.subscribeOn(Schedulers.io())
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(response -> {
-					if (response.error != null && response.error.contains(LiveTexError.INVALID_DEPARTMENT)) {
-						Toast.makeText(this, "Была выбрана невалидная комната", Toast.LENGTH_SHORT).show();
-					}
-				}, thr -> Log.e(TAG, "", thr));
-	}
-
-	private void updateEmployeeTypingState(EmployeeTypingEvent employeeTypingEvent) {
-		// todo: implement UI indicator
+		viewModel.sendMessage(chatMessage);
 	}
 
 	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {
 		switch (connectionState) {
-			case DISCONNECTED:
+			case DISCONNECTED: {
 				Toast.makeText(this, "Вебсокет отключен", Toast.LENGTH_SHORT).show();
 				break;
-			case CONNECTING:
+			}
+			case CONNECTING: {
 				break;
+			}
 			case CONNECTED: {
 				Toast.makeText(this, "Вебсокет подключен", Toast.LENGTH_SHORT).show();
 				break;
 			}
+			default:
+				break;
 		}
 	}
 
@@ -443,15 +286,14 @@ public class MainActivity extends AppCompatActivity {
 	protected void onDestroy() {
 		super.onDestroy();
 		disposables.clear();
-		NetworkManager.getInstance().forceDisconnect();
 	}
 
 	private void connect() {
 		String clientId = sp.getString(Const.KEY_CLIENTID, null);
-		disposables.add(networkManager.connect(clientId)
-				.subscribeOn(Schedulers.io())
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::onAuthSuccess, this::onAuthError));
+		Consumer<String> onAuthSuccess = clientIdReceived -> {
+			sp.edit().putString(Const.KEY_CLIENTID, clientIdReceived).apply();
+		};
+		viewModel.connect(clientId, onAuthSuccess);
 	}
 
 	private void updateDialogState(DialogState dialogState) {
@@ -495,14 +337,5 @@ public class MainActivity extends AppCompatActivity {
 				toolbarView.setSubtitle("Диалог с ботом");
 				break;
 		}
-	}
-
-	private void onAuthError(Throwable e) {
-		Log.e(TAG, "onAuthError", e);
-		Toast.makeText(this, "Ошибка соединения " + e.getMessage(), Toast.LENGTH_LONG).show();
-	}
-
-	private void onAuthSuccess(String clientId) {
-		sp.edit().putString(Const.KEY_CLIENTID, clientId).apply();
 	}
 }
