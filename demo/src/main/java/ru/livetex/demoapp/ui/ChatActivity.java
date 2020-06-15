@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -21,8 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import androidx.annotation.Nullable;
@@ -63,10 +62,11 @@ public class ChatActivity extends AppCompatActivity {
 	private ChatViewModel viewModel;
 
 	private Toolbar toolbarView;
+	private ViewGroup inputContainerView;
 	private EditText inputView;
-	private ImageView attachmentView;
+	private ImageView addView;
+	private ImageView sendView;
 	private RecyclerView messagesView;
-	private ImageView employeeAvatarView;
 
 	private final RxPermissions rxPermissions = new RxPermissions(this);
 	private SharedPreferences sp;
@@ -85,9 +85,10 @@ public class ChatActivity extends AppCompatActivity {
 
 		toolbarView = findViewById(R.id.toolbarView);
 		inputView = findViewById(R.id.inputView);
-		attachmentView = findViewById(R.id.attachmentView);
+		inputContainerView = findViewById(R.id.inputContainerView);
+		sendView = findViewById(R.id.sendView);
+		addView = findViewById(R.id.addView);
 		messagesView = findViewById(R.id.messagesView);
-		employeeAvatarView = findViewById(R.id.employeeAvatarView);
 
 		viewModel = new ViewModelProvider(this).get(ChatViewModel.class);
 
@@ -176,6 +177,8 @@ public class ChatActivity extends AppCompatActivity {
 	}
 
 	private void setupInput() {
+		sendView.setOnClickListener(v -> sendMessage());
+
 		inputView.setOnEditorActionListener((v, actionId, event) -> {
 			if (actionId == EditorInfo.IME_ACTION_SEND) {
 				sendMessage();
@@ -184,7 +187,7 @@ public class ChatActivity extends AppCompatActivity {
 			return false;
 		});
 
-		attachmentView.setOnClickListener(v -> {
+		addView.setOnClickListener(v -> {
 			disposables.add(rxPermissions
 					.request(Manifest.permission.READ_EXTERNAL_STORAGE)
 					.subscribe(granted -> {
@@ -297,45 +300,6 @@ public class ChatActivity extends AppCompatActivity {
 	}
 
 	private void updateDialogState(DialogState dialogState) {
-		if (dialogState.employee != null) {
-			toolbarView.setTitle(dialogState.employee.name);
-			if (!TextUtils.isEmpty(dialogState.employee.avatarUrl)) {
-				Glide.with(this)
-						.load(dialogState.employee.avatarUrl)
-						.placeholder(R.drawable.ic_user)
-						.error(R.drawable.ic_user)
-						.centerCrop()
-						.dontAnimate()
-						.apply(RequestOptions.circleCropTransform())
-						.into(employeeAvatarView);
-			} else {
-				employeeAvatarView.setImageResource(R.drawable.ic_user);
-			}
-		} else {
-			toolbarView.setTitle("Диалог");
-			employeeAvatarView.setImageResource(R.drawable.ic_user);
-		}
-
-		switch (dialogState.status) {
-			case UNASSIGNED:
-				toolbarView.setSubtitle("Диалог не назначен");
-				break;
-			case QUEUE:
-				toolbarView.setSubtitle("Диалог в очереди");
-				break;
-			case ASSIGNED:
-				switch (dialogState.employeeStatus) {
-					case ONLINE:
-						toolbarView.setSubtitle("Онлайн");
-						break;
-					case OFFLINE:
-						toolbarView.setSubtitle("Оффлайн");
-						break;
-				}
-				break;
-			case BOT:
-				toolbarView.setSubtitle("Диалог с ботом");
-				break;
-		}
+		// Here you can use dialog status and employee data
 	}
 }

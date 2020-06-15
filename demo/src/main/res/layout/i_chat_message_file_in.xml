@@ -1,11 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
-	android:id="@+id/image"
 	android:layout_width="wrap_content"
 	android:layout_height="wrap_content"
-	android:background="@drawable/rounded_rectangle_orange"
-	android:padding="3dp"
-	android:maxWidth="240dp"
-	tools:src="@drawable/placeholder"
-	android:layout_marginStart="10dp" />
+	android:layout_marginStart="18dp">
+
+	<TextView
+		android:id="@+id/nameView"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="16dp"
+		android:textColor="#000000"
+		android:textSize="11sp"
+		app:layout_constraintStart_toEndOf="@id/avatarView"
+		app:layout_constraintTop_toTopOf="parent"
+		tools:text="Имя оператора" />
+
+	<ImageView
+		android:id="@+id/avatarView"
+		android:layout_width="32dp"
+		android:layout_height="32dp"
+		android:src="@drawable/logo"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintStart_toStartOf="parent" />
+
+	<ImageView
+		android:id="@+id/image"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="6dp"
+		android:background="@drawable/bg_gray_rounded"
+		android:maxWidth="300dp"
+		android:padding="3dp"
+		app:layout_constraintStart_toEndOf="@id/avatarView"
+		app:layout_constraintTop_toBottomOf="@id/nameView"
+		tools:src="@drawable/placeholder" />
+</androidx.constraintlayout.widget.ConstraintLayout>

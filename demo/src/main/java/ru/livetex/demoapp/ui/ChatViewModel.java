@@ -84,6 +84,7 @@ public final class ChatViewModel extends ViewModel {
 				.observeOn(Schedulers.io())
 				.subscribe(attributesRequest -> {
 					// todo: ui
+					// Это пример отправляемых данных. Важно ответить посылкой аттрибутов на attributesRequest
 					Disposable d = Completable.fromAction(() -> messagesHandler.sendAttributes("Demo user", null, null, null))
 							.subscribeOn(Schedulers.io())
 							.observeOn(Schedulers.io())
@@ -95,7 +96,10 @@ public final class ChatViewModel extends ViewModel {
 
 		disposables.add(messagesHandler.dialogStateUpdate()
 				.observeOn(Schedulers.io())
-				.subscribe(dialogStateUpdateLiveData::postValue, thr -> {
+				.subscribe(dialogState -> {
+					ChatState.instance.setDialogState(dialogState);
+					dialogStateUpdateLiveData.postValue(dialogState);
+				}, thr -> {
 					Log.e(TAG, "dialogStateUpdate", thr);
 				}));
 

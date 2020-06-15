@@ -4,35 +4,38 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:background="#E1E1E1"
+	android:background="#ffffff"
 	tools:context=".ui.ChatActivity">
 
 	<androidx.appcompat.widget.Toolbar
 		android:id="@+id/toolbarView"
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
-		android:background="@color/colorPrimary"
+		app:contentInsetStartWithNavigation="18dp"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent"
-		app:title="Диалог">
+		app:logo="@drawable/logo"
+		app:title="" />
 
-		<ImageView
-			android:id="@+id/employeeAvatarView"
-			android:layout_width="32dp"
-			android:layout_height="32dp"
-			android:layout_gravity="end"
-			android:layout_marginEnd="12dp"
-			android:src="@drawable/ic_user"
-			tools:ignore="ContentDescription" />
-	</androidx.appcompat.widget.Toolbar>
+	<TextView
+		android:id="@+id/titleView"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:gravity="center"
+		android:text="Чат"
+		android:textSize="24sp"
+		app:layout_constraintBottom_toBottomOf="@id/toolbarView"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="@id/toolbarView" />
 
 	<androidx.recyclerview.widget.RecyclerView
 		android:id="@+id/messagesView"
 		android:layout_width="0dp"
 		android:layout_height="0dp"
 		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-		app:layout_constraintBottom_toTopOf="@+id/bottomView"
+		app:layout_constraintBottom_toTopOf="@+id/inputContainerView"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toBottomOf="@+id/toolbarView"
@@ -40,39 +43,63 @@
 		tools:listitem="@layout/i_chat_message_in" />
 
 	<androidx.constraintlayout.widget.ConstraintLayout
-		android:id="@+id/bottomView"
+		android:id="@+id/inputContainerView"
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
+		android:layout_marginStart="18dp"
+		android:layout_marginEnd="18dp"
+		android:layout_marginBottom="18dp"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent">
+
+		<ImageView
+			android:id="@+id/addView"
+			android:layout_width="32dp"
+			android:layout_height="32dp"
+			android:background="?attr/selectableItemBackgroundBorderless"
+			android:clickable="true"
+			android:focusable="true"
+			android:src="@drawable/plus"
+			app:layout_constraintBottom_toBottomOf="@id/inputContainerView"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="@id/inputContainerView" />
 
 		<EditText
 			android:id="@+id/inputView"
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
-			android:background="@android:color/white"
-			android:hint="Введите сообщение..."
+			android:layout_marginStart="8dp"
+			android:layout_marginEnd="8dp"
+			android:background="@drawable/bg_input_field"
+			android:hint="Введите сообщение"
 			android:imeOptions="actionSend"
+			android:importantForAutofill="no"
 			android:inputType="textCapSentences"
-			android:paddingStart="10dp"
+			android:maxLength="4000"
+			android:paddingStart="16dp"
 			android:paddingTop="10dp"
-			android:paddingEnd="41dp"
+			android:paddingEnd="16dp"
 			android:paddingBottom="10dp"
 			android:singleLine="true"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent"
+			android:textColor="@android:color/black"
+			android:textColorHint="#C4C4C4"
+			android:textSize="18sp"
+			app:layout_constraintEnd_toStartOf="@+id/sendView"
+			app:layout_constraintStart_toEndOf="@+id/addView"
 			app:layout_constraintTop_toTopOf="parent" />
 
 		<ImageView
-			android:id="@+id/attachmentView"
-			android:layout_width="36dp"
-			android:layout_height="36dp"
-			android:layout_marginEnd="5dp"
-			android:src="@drawable/ic_attachment"
-			app:layout_constraintBottom_toBottomOf="@+id/inputView"
-			app:layout_constraintEnd_toEndOf="@+id/inputView"
-			app:layout_constraintTop_toTopOf="@+id/inputView" />
+			android:id="@+id/sendView"
+			android:layout_width="32dp"
+			android:layout_height="32dp"
+			android:background="?attr/selectableItemBackgroundBorderless"
+			android:clickable="true"
+			android:focusable="true"
+			android:src="@drawable/send"
+			app:layout_constraintBottom_toBottomOf="@+id/inputContainerView"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintTop_toTopOf="@+id/inputContainerView" />
 	</androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

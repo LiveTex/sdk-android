@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import ru.livetex.demoapp.db.entity.ChatMessage;
+import ru.livetex.sdk.entity.DialogState;
 
 /**
  * In real projects for persistent storage it's recommended to use DB (like Room)
@@ -22,6 +23,15 @@ public final class ChatState {
 
 	private Map<String, ChatMessage> messages = new ConcurrentHashMap<>();
 	private BehaviorSubject<List<ChatMessage>> messagesSubject = BehaviorSubject.createDefault(Collections.emptyList());
+	private DialogState dialogState = null;
+
+	public void setDialogState(DialogState dialogState) {
+		this.dialogState = dialogState;
+	}
+
+	public DialogState getDialogState() {
+		return dialogState;
+	}
 
 	public Observable<List<ChatMessage>> messages() {
 		return messagesSubject

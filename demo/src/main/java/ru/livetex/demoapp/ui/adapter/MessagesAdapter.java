@@ -11,15 +11,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.functions.Consumer;
 import ru.livetex.demoapp.R;
-import ru.livetex.demoapp.db.entity.MessageSentState;
+import ru.livetex.demoapp.db.ChatState;
 
-public final class MessagesAdapter extends RecyclerView.Adapter {
+public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 	private static final int VIEW_TYPE_MESSAGE_INCOMING = 1;
 	private static final int VIEW_TYPE_MESSAGE_OUTGOING = 2;
 	private static final int VIEW_TYPE_FILE_INCOMING = 3;
@@ -123,49 +124,99 @@ public final class MessagesAdapter extends RecyclerView.Adapter {
 	}
 
 	private static class IncomingMessageHolder extends RecyclerView.ViewHolder {
-		TextView messageText;
+		TextView messageView;
+		ImageView avatarView;
+		TextView nameView;
 
 		IncomingMessageHolder(View itemView) {
 			super(itemView);
 
-			messageText = itemView.findViewById(R.id.text);
+			nameView = itemView.findViewById(R.id.nameView);
+			messageView = itemView.findViewById(R.id.text);
+			avatarView = itemView.findViewById(R.id.avatarView);
 		}
 
 		void bind(ChatItem message) {
-			messageText.setText(message.content);
+			messageView.setText(message.content);
+
+			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
+			String avatarUrl = null;
+			String opName = null;
+			if (ChatState.instance.getDialogState() != null && ChatState.instance.getDialogState().employee != null) {
+				avatarUrl = ChatState.instance.getDialogState().employee.avatarUrl;
+				opName = ChatState.instance.getDialogState().employee.name;
+			}
+
+			if (!TextUtils.isEmpty(avatarUrl)) {
+				Glide.with(avatarView.getContext())
+						.load(avatarUrl)
+						.placeholder(R.drawable.logo)
+						.error(R.drawable.logo)
+						.centerCrop()
+						.dontAnimate()
+						.apply(RequestOptions.circleCropTransform())
+						.into(avatarView);
+			} else {
+				avatarView.setImageResource(R.drawable.logo);
+			}
+
+			nameView.setText(opName);
 		}
 	}
 
 	private static class OutgoingMessageHolder extends RecyclerView.ViewHolder {
-		TextView messageText;
+		TextView messageView;
 
 		OutgoingMessageHolder(View itemView) {
 			super(itemView);
 
-			messageText = itemView.findViewById(R.id.text);
+			messageView = itemView.findViewById(R.id.text);
 		}
 
 		void bind(ChatItem message) {
-			messageText.setText(message.content);
-			if (message.sentState == MessageSentState.FAILED) {
-				messageText.setBackgroundResource(R.drawable.rounded_rectangle_red);
-			} else {
-				messageText.setBackgroundResource(R.drawable.rounded_rectangle_blue);
-			}
+			messageView.setText(message.content);
+			messageView.setBackgroundResource(R.drawable.rounded_rectangle_blue);
 		}
 	}
 
 	private static class IncomingFileHolder extends RecyclerView.ViewHolder {
 		ImageView imageView;
+		ImageView avatarView;
+		TextView nameView;
 
 		IncomingFileHolder(View itemView) {
 			super(itemView);
 
 			imageView = itemView.findViewById(R.id.image);
+			nameView = itemView.findViewById(R.id.nameView);
+			avatarView = itemView.findViewById(R.id.avatarView);
 		}
 
 		void bind(ChatItem message) {
 			loadImage(message, imageView);
+
+			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
+			String avatarUrl = null;
+			String opName = null;
+			if (ChatState.instance.getDialogState() != null && ChatState.instance.getDialogState().employee != null) {
+				avatarUrl = ChatState.instance.getDialogState().employee.avatarUrl;
+				opName = ChatState.instance.getDialogState().employee.name;
+			}
+
+			if (!TextUtils.isEmpty(avatarUrl)) {
+				Glide.with(avatarView.getContext())
+						.load(avatarUrl)
+						.placeholder(R.drawable.logo)
+						.error(R.drawable.logo)
+						.centerCrop()
+						.dontAnimate()
+						.apply(RequestOptions.circleCropTransform())
+						.into(avatarView);
+			} else {
+				avatarView.setImageResource(R.drawable.logo);
+			}
+
+			nameView.setText(opName);
 		}
 	}
 
@@ -180,15 +231,11 @@ public final class MessagesAdapter extends RecyclerView.Adapter {
 
 		void bind(ChatItem message) {
 			loadImage(message, imageView);
-			if (message.sentState == MessageSentState.FAILED) {
-				imageView.setBackgroundResource(R.drawable.rounded_rectangle_red);
-			} else {
-				imageView.setBackgroundResource(R.drawable.rounded_rectangle_blue);
-			}
+			imageView.setBackgroundResource(R.drawable.rounded_rectangle_blue);
 		}
 	}
 
-	// todo: https://bumptech.github.io/glide/int/recyclerview.html
+	// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
 	private static void loadImage(ChatItem message, ImageView imageView) {
 		Glide.with(imageView.getContext())
 				.load(message.fileUrl)
