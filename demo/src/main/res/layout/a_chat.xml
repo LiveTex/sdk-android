@@ -35,12 +35,101 @@
 		android:layout_width="0dp"
 		android:layout_height="0dp"
 		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-		app:layout_constraintBottom_toTopOf="@+id/inputContainerView"
+		app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toBottomOf="@+id/toolbarView"
 		app:stackFromEnd="true"
 		tools:listitem="@layout/i_chat_message_in" />
+
+	<androidx.constraintlayout.widget.Barrier
+		android:id="@+id/bottomBarrier"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		app:barrierDirection="top"
+		app:constraint_referenced_ids="inputContainerView,attributesContainerView"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintStart_toStartOf="parent" />
+
+	<LinearLayout
+		android:id="@+id/attributesContainerView"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginBottom="40dp"
+		android:orientation="vertical"
+		android:visibility="gone"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		tools:visibility="visible">
+
+		<com.google.android.material.card.MaterialCardView
+			android:layout_width="match_parent"
+			android:layout_marginTop="10dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="60dp"
+			android:layout_marginEnd="60dp"
+			app:cardBackgroundColor="#ffffff"
+			app:cardCornerRadius="15dp"
+			app:cardElevation="10dp"
+			app:cardMaxElevation="10dp">
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="vertical">
+
+				<EditText
+					android:id="@+id/attributesNameView"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:background="#ffffff"
+					android:hint="Имя"
+					android:inputType="textPersonName"
+					android:maxLength="100"
+					android:padding="24dp"
+					android:singleLine="true" />
+
+				<EditText
+					android:id="@+id/attributesPhoneView"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:background="#ffffff"
+					android:hint="Телефон"
+					android:inputType="phone"
+					android:maxLength="100"
+					android:padding="24dp"
+					android:singleLine="true" />
+
+				<EditText
+					android:id="@+id/attributesEmailView"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:background="#ffffff"
+					android:hint="E-mail"
+					android:inputType="textEmailAddress"
+					android:maxLength="100"
+					android:padding="24dp"
+					android:singleLine="true" />
+			</LinearLayout>
+
+		</com.google.android.material.card.MaterialCardView>
+
+		<com.google.android.material.button.MaterialButton
+			android:id="@+id/attributesSendView"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="60dp"
+			android:layout_marginTop="8dp"
+			android:layout_marginEnd="60dp"
+			android:paddingTop="14dp"
+			android:paddingBottom="14dp"
+			android:text="Отправить"
+			android:textAllCaps="false"
+			android:textSize="18sp"
+			app:backgroundTint="#24973E"
+			app:cornerRadius="15dp" />
+	</LinearLayout>
 
 	<androidx.constraintlayout.widget.ConstraintLayout
 		android:id="@+id/inputContainerView"
@@ -51,7 +140,8 @@
 		android:layout_marginBottom="18dp"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
-		app:layout_constraintStart_toStartOf="parent">
+		app:layout_constraintStart_toStartOf="parent"
+		tools:visibility="gone">
 
 		<ImageView
 			android:id="@+id/addView"

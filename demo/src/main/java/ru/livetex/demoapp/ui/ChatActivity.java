@@ -5,12 +5,12 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
@@ -26,8 +26,6 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,10 +34,8 @@ import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
-import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.entity.ChatMessage;
@@ -48,6 +44,7 @@ import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
 import ru.livetex.demoapp.utils.FileUtils;
+import ru.livetex.demoapp.utils.InputUtils;
 import ru.livetex.demoapp.utils.TextWatcherAdapter;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
@@ -61,15 +58,18 @@ public class ChatActivity extends AppCompatActivity {
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private ChatViewModel viewModel;
 
-	private Toolbar toolbarView;
-	private ViewGroup inputContainerView;
 	private EditText inputView;
 	private ImageView addView;
 	private ImageView sendView;
 	private RecyclerView messagesView;
+	private ViewGroup inputContainerView;
+	private ViewGroup attributesContainerView;
+	private View attributesSendView;
+	private EditText attributesNameView;
+	private EditText attributesPhoneView;
+	private EditText attributesEmailView;
 
 	private final RxPermissions rxPermissions = new RxPermissions(this);
-	private SharedPreferences sp;
 
 	private MessagesAdapter adapter = new MessagesAdapter();
 
@@ -81,27 +81,47 @@ public class ChatActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.a_chat);
 
-		sp = getSharedPreferences("livetex-demo", Context.MODE_PRIVATE);
-
-		toolbarView = findViewById(R.id.toolbarView);
 		inputView = findViewById(R.id.inputView);
-		inputContainerView = findViewById(R.id.inputContainerView);
 		sendView = findViewById(R.id.sendView);
 		addView = findViewById(R.id.addView);
 		messagesView = findViewById(R.id.messagesView);
+		inputContainerView = findViewById(R.id.inputContainerView);
+		attributesContainerView = findViewById(R.id.attributesContainerView);
+		attributesSendView = findViewById(R.id.attributesSendView);
+		attributesNameView = findViewById(R.id.attributesNameView);
+		attributesPhoneView = findViewById(R.id.attributesPhoneView);
+		attributesEmailView = findViewById(R.id.attributesEmailView);
 
-		viewModel = new ViewModelProvider(this).get(ChatViewModel.class);
+		viewModel = new ChatViewModelFactory(getSharedPreferences("livetex-demo", Context.MODE_PRIVATE)).create(ChatViewModel.class);
 
 		setupUI();
 		subscribeViewModel();
-		connect();
 	}
 
 	private void subscribeViewModel() {
+		viewModel.viewStateLiveData.observe(this, this::setViewState);
 		viewModel.errorLiveData.observe(this, this::onError);
 		viewModel.connectionStateLiveData.observe(this, this::onConnectionStateUpdate);
 		viewModel.departmentRequestLiveData.observe(this, this::onDepartmentRequest);
 		viewModel.dialogStateUpdateLiveData.observe(this, this::updateDialogState);
+	}
+
+	private void setViewState(ChatViewState viewState) {
+		if (viewState == null) {
+			return;
+		}
+
+		switch (viewState) {
+			case NORMAL:
+				inputContainerView.setVisibility(View.VISIBLE);
+				attributesContainerView.setVisibility(View.GONE);
+				break;
+			case ATTRIBUTES:
+				InputUtils.hideKeyboard(this);
+				inputContainerView.setVisibility(View.GONE);
+				attributesContainerView.setVisibility(View.VISIBLE);
+				break;
+		}
 	}
 
 	private void onError(String msg) {
@@ -177,6 +197,7 @@ public class ChatActivity extends AppCompatActivity {
 	}
 
 	private void setupInput() {
+		// --- Chat input
 		sendView.setOnClickListener(v -> sendMessage());
 
 		inputView.setOnEditorActionListener((v, actionId, event) -> {
@@ -224,6 +245,23 @@ public class ChatActivity extends AppCompatActivity {
 				// notify about typing
 				textSubject.onNext(editable.toString());
 			}
+		});
+
+		// --- Attributes
+
+		attributesSendView.setOnClickListener(v -> {
+			String name = attributesNameView.getText().toString().trim();
+			String phone = attributesPhoneView.getText().toString().trim();
+			String email = attributesEmailView.getText().toString().trim();
+
+			// Check for required fields. In demo only name is required, in real app depends on your configs.
+			if (TextUtils.isEmpty(name)) {
+				attributesNameView.setError("Заполните поле");
+				attributesNameView.requestFocus();
+				return;
+			}
+
+			viewModel.sendAttributes(name, phone, email);
 		});
 	}
 
@@ -289,14 +327,6 @@ public class ChatActivity extends AppCompatActivity {
 	protected void onDestroy() {
 		super.onDestroy();
 		disposables.clear();
-	}
-
-	private void connect() {
-		String clientId = sp.getString(Const.KEY_CLIENTID, null);
-		Consumer<String> onAuthSuccess = clientIdReceived -> {
-			sp.edit().putString(Const.KEY_CLIENTID, clientIdReceived).apply();
-		};
-		viewModel.connect(clientId, onAuthSuccess);
 	}
 
 	private void updateDialogState(DialogState dialogState) {

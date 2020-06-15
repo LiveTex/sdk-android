@@ -1,5 +1,6 @@
 package ru.livetex.demoapp.ui;
 
+import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -8,16 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
+import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.Mapper;
 import ru.livetex.demoapp.db.entity.ChatMessage;
@@ -38,17 +37,21 @@ public final class ChatViewModel extends ViewModel {
 	private static final String TAG = "MainViewModel";
 
 	private final CompositeDisposable disposables = new CompositeDisposable();
+	private final SharedPreferences sp;
 
 	final MutableLiveData<NetworkManager.ConnectionState> connectionStateLiveData = new MutableLiveData<>();
 	final MutableLiveData<DepartmentRequestEntity> departmentRequestLiveData = new MutableLiveData<>();
 	final MutableLiveData<DialogState> dialogStateUpdateLiveData = new MutableLiveData<>();
+	final MutableLiveData<ChatViewState> viewStateLiveData = new MutableLiveData<>(ChatViewState.NORMAL);
 	final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
 
 	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
 	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
 
-	public ChatViewModel() {
+	public ChatViewModel(SharedPreferences sp) {
+		this.sp = sp;
 		subscribe();
+		connect();
 	}
 
 	@Override
@@ -83,13 +86,16 @@ public final class ChatViewModel extends ViewModel {
 		disposables.add(messagesHandler.attributesRequest()
 				.observeOn(Schedulers.io())
 				.subscribe(attributesRequest -> {
-					// todo: ui
-					// Это пример отправляемых данных. Важно ответить посылкой аттрибутов на attributesRequest
-					Disposable d = Completable.fromAction(() -> messagesHandler.sendAttributes("Demo user", null, null, null))
-							.subscribeOn(Schedulers.io())
-							.observeOn(Schedulers.io())
-							.subscribe(Functions.EMPTY_ACTION, thr -> Log.e(TAG, "", thr));
-					disposables.add(d);
+					// Это лишь пример реализации того, как собрать и отправить аттрибуты.
+					// Важно только ответить на attributesRequest посылкой обязательных (если есть) аттрибутов.
+					// То есть если не требуется собирать аттрибуты от пользователя, можно просто ответить на запрос с помощью messagesHandler.sendAttributes
+					viewStateLiveData.postValue(ChatViewState.ATTRIBUTES);
+
+//					Disposable d = Completable.fromAction(() -> messagesHandler.sendAttributes("Demo user", null, null, null))
+//							.subscribeOn(Schedulers.io())
+//							.observeOn(Schedulers.io())
+//							.subscribe(Functions.EMPTY_ACTION, thr -> Log.e(TAG, "", thr));
+//					disposables.add(d);
 				}, thr -> {
 					Log.e(TAG, "", thr);
 				}));
@@ -112,18 +118,14 @@ public final class ChatViewModel extends ViewModel {
 				}));
 	}
 
-	private void updateHistory(HistoryEntity historyEntity) {
-		List<ChatMessage> messages = new ArrayList<>();
-		for (GenericMessage genericMessage : historyEntity.messages) {
-			if (genericMessage instanceof TextMessage) {
-				ChatMessage chatMessage = Mapper.toChatMessage((TextMessage) genericMessage);
-				messages.add(chatMessage);
-			} else if (genericMessage instanceof FileMessage) {
-				ChatMessage chatMessage = Mapper.toChatMessage((FileMessage) genericMessage);
-				messages.add(chatMessage);
-			}
-		}
-		ChatState.instance.addMessages(messages);
+	void sendAttributes(String name, String phone, String email) {
+		Disposable d = Completable.fromAction(() -> messagesHandler.sendAttributes(name, phone, email, null))
+				.subscribeOn(Schedulers.io())
+				.observeOn(Schedulers.io())
+				.subscribe(() -> {
+					viewStateLiveData.postValue(ChatViewState.NORMAL);
+				}, thr -> Log.e(TAG, "sendAttributes", thr));
+		disposables.add(d);
 	}
 
 	void sendMessage(ChatMessage chatMessage) {
@@ -187,6 +189,20 @@ public final class ChatViewModel extends ViewModel {
 				}, thr -> Log.e(TAG, "sendDepartmentSelectionEvent", thr));
 	}
 
+	private void updateHistory(HistoryEntity historyEntity) {
+		List<ChatMessage> messages = new ArrayList<>();
+		for (GenericMessage genericMessage : historyEntity.messages) {
+			if (genericMessage instanceof TextMessage) {
+				ChatMessage chatMessage = Mapper.toChatMessage((TextMessage) genericMessage);
+				messages.add(chatMessage);
+			} else if (genericMessage instanceof FileMessage) {
+				ChatMessage chatMessage = Mapper.toChatMessage((FileMessage) genericMessage);
+				messages.add(chatMessage);
+			}
+		}
+		ChatState.instance.addMessages(messages);
+	}
+
 	private void sendFileMessage(@NonNull ChatMessage chatMessage) {
 		File f = new File(chatMessage.fileUrl);
 		Disposable d = NetworkManager.getInstance().getApiManager().uploadFile(f)
@@ -221,15 +237,17 @@ public final class ChatViewModel extends ViewModel {
 		disposables.add(d);
 	}
 
-	void connect(@Nullable String clientId, @NonNull Consumer<String> onAuthSuccess) {
+	private void connect() {
+		String clientId = sp.getString(Const.KEY_CLIENTID, null);
+
 		disposables.add(networkManager.connect(clientId)
 				.subscribeOn(Schedulers.io())
 				.observeOn(Schedulers.io())
-				.subscribe(onAuthSuccess::accept, this::onAuthError));
-	}
-
-	private void onAuthError(Throwable e) {
-		Log.e(TAG, "onAuthError", e);
-		errorLiveData.postValue("Ошибка соединения " + e.getMessage());
+				.subscribe(clientIdReceived -> {
+					sp.edit().putString(Const.KEY_CLIENTID, clientIdReceived).apply();
+				}, e -> {
+					Log.e(TAG, "connect", e);
+					errorLiveData.postValue("Ошибка соединения " + e.getMessage());
+				}));
 	}
 }
