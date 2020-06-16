@@ -4,5 +4,7 @@ enum ChatViewState {
 	// Normal UI with visible input
 	NORMAL,
 	// Only Attributes form is visible
-	ATTRIBUTES
+	ATTRIBUTES,
+	// Only Departments selection is visible
+	DEPARTMENTS
 }

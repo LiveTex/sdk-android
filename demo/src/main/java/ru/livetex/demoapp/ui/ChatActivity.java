@@ -2,7 +2,6 @@ package ru.livetex.demoapp.ui;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -22,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.google.android.material.button.MaterialButton;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
 import androidx.annotation.Nullable;
@@ -47,7 +47,6 @@ import ru.livetex.demoapp.utils.FileUtils;
 import ru.livetex.demoapp.utils.InputUtils;
 import ru.livetex.demoapp.utils.TextWatcherAdapter;
 import ru.livetex.sdk.entity.Department;
-import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.network.NetworkManager;
 
@@ -64,6 +63,8 @@ public class ChatActivity extends AppCompatActivity {
 	private RecyclerView messagesView;
 	private ViewGroup inputContainerView;
 	private ViewGroup attributesContainerView;
+	private ViewGroup departmentsContainerView;
+	private ViewGroup departmentsButtonContainerView;
 	private View attributesSendView;
 	private EditText attributesNameView;
 	private EditText attributesPhoneView;
@@ -87,6 +88,8 @@ public class ChatActivity extends AppCompatActivity {
 		messagesView = findViewById(R.id.messagesView);
 		inputContainerView = findViewById(R.id.inputContainerView);
 		attributesContainerView = findViewById(R.id.attributesContainerView);
+		departmentsContainerView = findViewById(R.id.departmentsContainerView);
+		departmentsButtonContainerView = findViewById(R.id.departmentsButtonContainerView);
 		attributesSendView = findViewById(R.id.attributesSendView);
 		attributesNameView = findViewById(R.id.attributesNameView);
 		attributesPhoneView = findViewById(R.id.attributesPhoneView);
@@ -102,33 +105,8 @@ public class ChatActivity extends AppCompatActivity {
 		viewModel.viewStateLiveData.observe(this, this::setViewState);
 		viewModel.errorLiveData.observe(this, this::onError);
 		viewModel.connectionStateLiveData.observe(this, this::onConnectionStateUpdate);
-		viewModel.departmentRequestLiveData.observe(this, this::onDepartmentRequest);
+		viewModel.departmentsLiveData.observe(this, this::showDepartments);
 		viewModel.dialogStateUpdateLiveData.observe(this, this::updateDialogState);
-	}
-
-	private void setViewState(ChatViewState viewState) {
-		if (viewState == null) {
-			return;
-		}
-
-		switch (viewState) {
-			case NORMAL:
-				inputContainerView.setVisibility(View.VISIBLE);
-				attributesContainerView.setVisibility(View.GONE);
-				break;
-			case ATTRIBUTES:
-				InputUtils.hideKeyboard(this);
-				inputContainerView.setVisibility(View.GONE);
-				attributesContainerView.setVisibility(View.VISIBLE);
-				break;
-		}
-	}
-
-	private void onError(String msg) {
-		if (TextUtils.isEmpty(msg)) {
-			return;
-		}
-		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 	}
 
 	@Override
@@ -265,30 +243,48 @@ public class ChatActivity extends AppCompatActivity {
 		});
 	}
 
-	private void onDepartmentRequest(DepartmentRequestEntity departmentRequestEntity) {
-		List<Department> departments = departmentRequestEntity.departments;
-
-		if (departments.isEmpty()) {
-			AlertDialog.Builder builder = new AlertDialog.Builder(this)
-					.setTitle("Ошибка")
-					.setMessage("Список комнат пуст, свяжитесь с поддержкой");
-			builder.show();
+	private void setViewState(ChatViewState viewState) {
+		if (viewState == null) {
 			return;
 		}
 
-		List<String> departmentNames = new ArrayList<>();
-		for (Department dep : departments) {
-			departmentNames.add(dep.id);
+		switch (viewState) {
+			case NORMAL:
+				inputContainerView.setVisibility(View.VISIBLE);
+				attributesContainerView.setVisibility(View.GONE);
+				departmentsContainerView.setVisibility(View.GONE);
+				break;
+			case ATTRIBUTES:
+				InputUtils.hideKeyboard(this);
+				inputContainerView.setVisibility(View.GONE);
+				attributesContainerView.setVisibility(View.VISIBLE);
+				break;
+			case DEPARTMENTS:
+				InputUtils.hideKeyboard(this);
+				inputContainerView.setVisibility(View.GONE);
+				attributesContainerView.setVisibility(View.GONE);
+				departmentsContainerView.setVisibility(View.VISIBLE);
+				break;
 		}
+	}
 
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle("Выберите комнату");
-		builder.setCancelable(false);
-		builder.setItems(departmentNames.toArray(new String[0]), (dialogInterface, i) -> {
-			viewModel.selectDepartment(departments.get(i));
-		});
-		AlertDialog dialog = builder.create();
-		dialog.show();
+	private void showDepartments(List<Department> departments) {
+		departmentsButtonContainerView.removeAllViews();
+
+		for (Department department : departments) {
+			MaterialButton view = (MaterialButton) View.inflate(this, R.layout.l_department_button, null);
+			view.setText(department.id);
+			view.setOnClickListener(v -> viewModel.selectDepartment(department));
+
+			departmentsButtonContainerView.addView(view);
+		}
+	}
+
+	private void onError(String msg) {
+		if (TextUtils.isEmpty(msg)) {
+			return;
+		}
+		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
 	}
 
 	private void sendMessage() {

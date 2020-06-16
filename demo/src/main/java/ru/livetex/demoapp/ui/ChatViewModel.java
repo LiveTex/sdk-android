@@ -40,7 +40,7 @@ public final class ChatViewModel extends ViewModel {
 	private final SharedPreferences sp;
 
 	final MutableLiveData<NetworkManager.ConnectionState> connectionStateLiveData = new MutableLiveData<>();
-	final MutableLiveData<DepartmentRequestEntity> departmentRequestLiveData = new MutableLiveData<>();
+	final MutableLiveData<List<Department>> departmentsLiveData = new MutableLiveData<>();
 	final MutableLiveData<DialogState> dialogStateUpdateLiveData = new MutableLiveData<>();
 	final MutableLiveData<ChatViewState> viewStateLiveData = new MutableLiveData<>(ChatViewState.NORMAL);
 	final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
@@ -79,7 +79,7 @@ public final class ChatViewModel extends ViewModel {
 
 		disposables.add(messagesHandler.departmentRequest()
 				.observeOn(Schedulers.io())
-				.subscribe(departmentRequestLiveData::postValue, thr -> {
+				.subscribe(this::onDepartmentsRequest, thr -> {
 					Log.e(TAG, "departmentRequest", thr);
 				}));
 
@@ -116,6 +116,26 @@ public final class ChatViewModel extends ViewModel {
 				}, thr -> {
 					Log.e(TAG, "employeeTyping", thr);
 				}));
+	}
+
+	/**
+	 * Give user ability to choose chat department (room). Select the one if only one in list.
+	 */
+	private void onDepartmentsRequest(DepartmentRequestEntity departmentRequestEntity) {
+		List<Department> departments = departmentRequestEntity.departments;
+
+		if (departments.isEmpty()) {
+			errorLiveData.postValue("Список комнат пуст, свяжитесь с поддержкой");
+			return;
+		}
+
+		if (departments.size() == 1) {
+			selectDepartment(departments.get(0));
+			return;
+		}
+
+		departmentsLiveData.postValue(departments);
+		viewStateLiveData.postValue(ChatViewState.DEPARTMENTS);
 	}
 
 	void sendAttributes(String name, String phone, String email) {
@@ -184,7 +204,9 @@ public final class ChatViewModel extends ViewModel {
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(response -> {
 					if (response.error != null && response.error.contains(LiveTexError.INVALID_DEPARTMENT)) {
-						errorLiveData.postValue("Была выбрана невалидная комната");
+						errorLiveData.setValue("Была выбрана невалидная комната");
+					} else {
+						viewStateLiveData.setValue(ChatViewState.NORMAL);
 					}
 				}, thr -> Log.e(TAG, "sendDepartmentSelectionEvent", thr));
 	}

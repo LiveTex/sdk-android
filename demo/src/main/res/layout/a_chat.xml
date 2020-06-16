@@ -47,7 +47,7 @@
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
 		app:barrierDirection="top"
-		app:constraint_referenced_ids="inputContainerView,attributesContainerView"
+		app:constraint_referenced_ids="inputContainerView,attributesContainerView,departmentsContainerView"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintStart_toStartOf="parent" />
 
@@ -61,13 +61,13 @@
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
-		tools:visibility="visible">
+		tools:visibility="gone">
 
 		<com.google.android.material.card.MaterialCardView
 			android:layout_width="match_parent"
-			android:layout_marginTop="10dp"
 			android:layout_height="wrap_content"
 			android:layout_marginStart="60dp"
+			android:layout_marginTop="10dp"
 			android:layout_marginEnd="60dp"
 			app:cardBackgroundColor="#ffffff"
 			app:cardCornerRadius="15dp"
@@ -129,6 +129,35 @@
 			android:textSize="18sp"
 			app:backgroundTint="#24973E"
 			app:cornerRadius="15dp" />
+	</LinearLayout>
+
+	<LinearLayout
+		android:id="@+id/departmentsContainerView"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:orientation="vertical"
+		android:visibility="gone"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		tools:visibility="visible">
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:gravity="center"
+			android:padding="10dp"
+			android:text="Выберите куда направить ваше обращение"
+			android:textColor="#757B85"
+			android:textSize="12sp" />
+
+		<LinearLayout
+			android:id="@+id/departmentsButtonContainerView"
+			android:padding="8dp"
+			android:background="#ECEDF1"
+			android:orientation="vertical"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"/>
 	</LinearLayout>
 
 	<androidx.constraintlayout.widget.ConstraintLayout
