@@ -208,7 +208,10 @@ public final class ChatViewModel extends ViewModel {
 					} else {
 						viewStateLiveData.setValue(ChatViewState.NORMAL);
 					}
-				}, thr -> Log.e(TAG, "sendDepartmentSelectionEvent", thr));
+				}, thr -> {
+					errorLiveData.setValue(thr.getMessage());
+					Log.e(TAG, "sendDepartmentSelectionEvent", thr);
+				});
 	}
 
 	private void updateHistory(HistoryEntity historyEntity) {
