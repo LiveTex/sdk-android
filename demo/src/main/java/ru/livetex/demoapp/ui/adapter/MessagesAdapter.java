@@ -19,8 +19,8 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.functions.Consumer;
 import ru.livetex.demoapp.R;
-import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.utils.DateUtils;
+import ru.livetex.sdk.entity.Employee;
 
 public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 	private static final int VIEW_TYPE_MESSAGE_INCOMING = 1;
@@ -144,12 +144,8 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			messageView.setText(message.content);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = null;
-			String opName = null;
-			if (ChatState.instance.getDialogState() != null && ChatState.instance.getDialogState().employee != null) {
-				avatarUrl = ChatState.instance.getDialogState().employee.avatarUrl;
-				opName = ChatState.instance.getDialogState().employee.name;
-			}
+			String avatarUrl = ((Employee)message.creator).avatarUrl;
+			String opName = ((Employee)message.creator).name;
 
 			if (!TextUtils.isEmpty(avatarUrl)) {
 				Glide.with(avatarView.getContext())
@@ -208,12 +204,8 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			loadImage(message, imageView);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = null;
-			String opName = null;
-			if (ChatState.instance.getDialogState() != null && ChatState.instance.getDialogState().employee != null) {
-				avatarUrl = ChatState.instance.getDialogState().employee.avatarUrl;
-				opName = ChatState.instance.getDialogState().employee.name;
-			}
+			String avatarUrl = ((Employee)message.creator).avatarUrl;
+			String opName = ((Employee)message.creator).name;
 
 			if (!TextUtils.isEmpty(avatarUrl)) {
 				Glide.with(avatarView.getContext())

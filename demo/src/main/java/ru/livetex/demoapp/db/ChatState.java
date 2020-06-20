@@ -13,6 +13,7 @@ import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.sdk.entity.DialogState;
+import ru.livetex.sdk.entity.User;
 
 /**
  * In real projects for persistent storage it's recommended to use DB (like Room)
@@ -87,7 +88,8 @@ public final class ChatState {
 				"",
 				new Date(),
 				false,
-				filePath
+				filePath,
+				new User()
 		);
 		addOrUpdateMessage(chatMessage);
 		return chatMessage;

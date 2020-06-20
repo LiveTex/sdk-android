@@ -25,7 +25,8 @@ public class Mapper {
 		ChatMessage chatMessage = new ChatMessage(textMessage.id,
 				textMessage.content,
 				textMessage.createdAt,
-				textMessage.creator instanceof Employee
+				textMessage.creator instanceof Employee,
+				textMessage.creator
 				);
 		return chatMessage;
 	}
@@ -35,7 +36,8 @@ public class Mapper {
 				fileMessage.name,
 				fileMessage.createdAt,
 				fileMessage.creator instanceof Employee,
-				fileMessage.url
+				fileMessage.url,
+				fileMessage.creator
 		);
 		return chatMessage;
 	}

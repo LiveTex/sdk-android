@@ -128,7 +128,8 @@ public class EntityMapper {
 
 			switch (creatorType) {
 				case Employee.TYPE: {
-					message.creator = gson.fromJson(creator, Employee.class);
+					JsonObject creatorObject = creator.getAsJsonObject("employee");
+					message.creator = gson.fromJson(creatorObject, Employee.class);
 					break;
 				}
 				case User.TYPE: {
