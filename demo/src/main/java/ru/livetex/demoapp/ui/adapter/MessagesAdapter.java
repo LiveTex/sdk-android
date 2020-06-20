@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.bumptech.glide.request.RequestOptions;
 
 import androidx.annotation.NonNull;
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.functions.Consumer;
 import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
+import ru.livetex.demoapp.utils.DateUtils;
 
 public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 	private static final int VIEW_TYPE_MESSAGE_INCOMING = 1;
@@ -127,13 +129,15 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		TextView messageView;
 		ImageView avatarView;
 		TextView nameView;
+		TextView timeView;
 
 		IncomingMessageHolder(View itemView) {
 			super(itemView);
 
 			nameView = itemView.findViewById(R.id.nameView);
-			messageView = itemView.findViewById(R.id.text);
+			messageView = itemView.findViewById(R.id.messageView);
 			avatarView = itemView.findViewById(R.id.avatarView);
+			timeView = itemView.findViewById(R.id.timeView);
 		}
 
 		void bind(ChatItem message) {
@@ -161,21 +165,27 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			}
 
 			nameView.setText(opName);
+
+			timeView.setText(DateUtils.timestampToTime(message.createdAt));
 		}
 	}
 
 	private static class OutgoingMessageHolder extends RecyclerView.ViewHolder {
 		TextView messageView;
+		TextView timeView;
 
 		OutgoingMessageHolder(View itemView) {
 			super(itemView);
 
-			messageView = itemView.findViewById(R.id.text);
+			messageView = itemView.findViewById(R.id.messageView);
+			timeView = itemView.findViewById(R.id.timeView);
 		}
 
 		void bind(ChatItem message) {
 			messageView.setText(message.content);
 			messageView.setBackgroundResource(R.drawable.rounded_rectangle_blue);
+
+			timeView.setText(DateUtils.timestampToTime(message.createdAt));
 		}
 	}
 
@@ -183,6 +193,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		ImageView imageView;
 		ImageView avatarView;
 		TextView nameView;
+		TextView timeView;
 
 		IncomingFileHolder(View itemView) {
 			super(itemView);
@@ -190,6 +201,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			imageView = itemView.findViewById(R.id.image);
 			nameView = itemView.findViewById(R.id.nameView);
 			avatarView = itemView.findViewById(R.id.avatarView);
+			timeView = itemView.findViewById(R.id.timeView);
 		}
 
 		void bind(ChatItem message) {
@@ -217,32 +229,40 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			}
 
 			nameView.setText(opName);
+
+			timeView.setText(DateUtils.timestampToTime(message.createdAt));
 		}
 	}
 
 	private static class OutgoingFileHolder extends RecyclerView.ViewHolder {
 		ImageView imageView;
+		TextView timeView;
 
 		OutgoingFileHolder(View itemView) {
 			super(itemView);
 
 			imageView = itemView.findViewById(R.id.image);
+			timeView = itemView.findViewById(R.id.timeView);
 		}
 
 		void bind(ChatItem message) {
 			loadImage(message, imageView);
-			imageView.setBackgroundResource(R.drawable.rounded_rectangle_blue);
+
+			timeView.setText(DateUtils.timestampToTime(message.createdAt));
 		}
 	}
 
 	// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
 	private static void loadImage(ChatItem message, ImageView imageView) {
+		int cornersRadius = imageView.getResources().getDimensionPixelOffset(R.dimen.chat_image_corner_radius);
+
 		Glide.with(imageView.getContext())
 				.load(message.fileUrl)
 				.placeholder(R.drawable.placeholder)
 				.error(R.drawable.placeholder)
 				.centerCrop()
 				.dontAnimate()
+				.transform(new RoundedCorners(cornersRadius))
 				.into(imageView);
 	}
 }
