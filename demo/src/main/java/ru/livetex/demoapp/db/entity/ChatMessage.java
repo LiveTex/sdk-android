@@ -6,7 +6,7 @@ import java.util.Objects;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-public final class ChatMessage {
+public final class ChatMessage implements Comparable<ChatMessage> {
 	@NonNull
 	public String id;
 	@NonNull
@@ -67,5 +67,10 @@ public final class ChatMessage {
 	@Override
 	public int hashCode() {
 		return Objects.hash(id, content, createdAt, isIncoming, sentState);
+	}
+
+	@Override
+	public int compareTo(ChatMessage o) {
+		return this.createdAt.compareTo(o.createdAt);
 	}
 }

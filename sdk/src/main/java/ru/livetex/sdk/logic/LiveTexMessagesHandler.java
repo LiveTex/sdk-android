@@ -31,7 +31,7 @@ public class LiveTexMessagesHandler {
 
 	private final PublishSubject<BaseEntity> entitySubject = PublishSubject.create();
 	private final PublishSubject<DialogState> dialogStateSubject = PublishSubject.create();
-	private final PublishSubject<HistoryEntity> historySubject = PublishSubject.create();
+	private final PublishSubject<HistoryEntity> historyUpdateSubject = PublishSubject.create();
 	private final PublishSubject<EmployeeTypingEvent> employeeTypingSubject = PublishSubject.create();
 	private final PublishSubject<AttributesRequest> attributesRequestSubject = PublishSubject.create();
 	private final PublishSubject<DepartmentRequestEntity> departmentRequestSubject = PublishSubject.create();
@@ -72,7 +72,7 @@ public class LiveTexMessagesHandler {
 		if (entity instanceof DialogState) {
 			dialogStateSubject.onNext((DialogState) entity);
 		} else if (entity instanceof HistoryEntity) {
-			historySubject.onNext((HistoryEntity) entity);
+			historyUpdateSubject.onNext((HistoryEntity) entity);
 		} else if (entity instanceof EmployeeTypingEvent) {
 			employeeTypingSubject.onNext((EmployeeTypingEvent) entity);
 		} else if (entity instanceof AttributesRequest) {
@@ -139,8 +139,11 @@ public class LiveTexMessagesHandler {
 		return dialogStateSubject;
 	}
 
-	public PublishSubject<HistoryEntity> history() {
-		return historySubject;
+	/**
+	 * Enitity which contains some part of chat messaging history. It can be newer or older messages.
+	 */
+	public PublishSubject<HistoryEntity> historyUpdate() {
+		return historyUpdateSubject;
 	}
 
 	public PublishSubject<EmployeeTypingEvent> employeeTyping() {

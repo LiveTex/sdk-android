@@ -71,7 +71,7 @@ public final class ChatViewModel extends ViewModel {
 					Log.e(TAG, "connectionState", thr);
 				}));
 
-		disposables.add(messagesHandler.history()
+		disposables.add(messagesHandler.historyUpdate()
 				.observeOn(Schedulers.io())
 				.subscribe(this::updateHistory, thr -> {
 					Log.e(TAG, "history", thr);
@@ -152,7 +152,7 @@ public final class ChatViewModel extends ViewModel {
 		Disposable d = messagesHandler.sendTextMessage(chatMessage.content)
 				.doOnSubscribe(ignore -> {
 					chatMessage.setSentState(MessageSentState.SENDING);
-					ChatState.instance.updateMessage(chatMessage);
+					ChatState.instance.addOrUpdateMessage(chatMessage);
 				})
 				.subscribeOn(Schedulers.io())
 				.observeOn(Schedulers.io())
@@ -167,13 +167,13 @@ public final class ChatViewModel extends ViewModel {
 					chatMessage.createdAt = resp.sentMessage.createdAt;
 
 					// in real project here should be saving (upsert) in persistent storage
-					ChatState.instance.addMessage(chatMessage);
+					ChatState.instance.addOrUpdateMessage(chatMessage);
 				}, thr -> {
 					Log.e(TAG, "sendMessage", thr);
 					errorLiveData.postValue("Ошибка отправки " + thr.getMessage());
 
 					chatMessage.setSentState(MessageSentState.FAILED);
-					ChatState.instance.updateMessage(chatMessage);
+					ChatState.instance.addOrUpdateMessage(chatMessage);
 				});
 	}
 
@@ -235,7 +235,7 @@ public final class ChatViewModel extends ViewModel {
 				.observeOn(Schedulers.io())
 				.doOnSubscribe(ignore -> {
 					chatMessage.setSentState(MessageSentState.SENDING);
-					ChatState.instance.updateMessage(chatMessage);
+					ChatState.instance.addOrUpdateMessage(chatMessage);
 				})
 				.flatMap(messagesHandler::sendFileMessage)
 				.subscribe(resp -> {
@@ -249,14 +249,14 @@ public final class ChatViewModel extends ViewModel {
 							chatMessage.createdAt = resp.sentMessage.createdAt;
 
 							// in real project here should be saving (upsert) in persistent storage
-							ChatState.instance.addMessage(chatMessage);
+							ChatState.instance.addOrUpdateMessage(chatMessage);
 						},
 						thr -> {
 							Log.e(TAG, "onFileUpload", thr);
 							errorLiveData.postValue("Ошибка отправки " + thr.getMessage());
 
 							chatMessage.setSentState(MessageSentState.FAILED);
-							ChatState.instance.updateMessage(chatMessage);
+							ChatState.instance.addOrUpdateMessage(chatMessage);
 						});
 
 		disposables.add(d);

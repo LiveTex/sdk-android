@@ -42,10 +42,13 @@ public final class ChatState {
 		for (ChatMessage message : newMessages) {
 			messages.put(message.id, message);
 		}
-		messagesSubject.onNext(new ArrayList<>(messages.values()));
+		ArrayList<ChatMessage> result = new ArrayList<>(messages.values());
+		// Must do sorting because "newMessages" can be previous messages, received from history loading
+		Collections.sort(result);
+		messagesSubject.onNext(result);
 	}
 
-	public synchronized void addMessage(ChatMessage message) {
+	public synchronized void addOrUpdateMessage(ChatMessage message) {
 		messages.put(message.id, message);
 		messagesSubject.onNext(new ArrayList<>(messages.values()));
 	}
@@ -53,11 +56,6 @@ public final class ChatState {
 	public synchronized void removeMessage(String id) {
 		messages.remove(id);
 		//messagesSubject.onNext(new ArrayList<>(messages.values()));
-	}
-
-	public synchronized void updateMessage(ChatMessage message) {
-		messages.remove(message.id);
-		addMessage(message);
 	}
 
 	@Nullable
@@ -75,7 +73,7 @@ public final class ChatState {
 				text,
 				new Date()
 		);
-		addMessage(chatMessage);
+		addOrUpdateMessage(chatMessage);
 		return chatMessage;
 	}
 
@@ -91,7 +89,7 @@ public final class ChatState {
 				false,
 				filePath
 		);
-		addMessage(chatMessage);
+		addOrUpdateMessage(chatMessage);
 		return chatMessage;
 	}
 }
