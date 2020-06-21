@@ -16,9 +16,20 @@ public final class TextMessage extends BaseEntity implements GenericMessage {
 	@NonNull
 	public transient Creator creator;
 
-	public TextMessage(String text) {
+	public TextMessage(@NonNull String text) {
 		super();
 		this.content = text;
+	}
+
+	@Override
+	@NonNull
+	public Creator getCreator() {
+		return creator;
+	}
+
+	@Override
+	public void setCreator(@NonNull Creator creator) {
+		this.creator = creator;
 	}
 
 	@Override

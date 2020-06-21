@@ -29,7 +29,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static final int VIEW_TYPE_IMAGE_OUTGOING = 4;
 	private static final int VIEW_TYPE_FILE_INCOMING = 5;
 	private static final int VIEW_TYPE_FILE_OUTGOING = 6;
-
+	private static final int VIEW_TYPE_SYSTEM_MESSAGE = 7;
 
 	private List<ChatItem> messages = new ArrayList<>();
 	@Nullable
@@ -65,8 +65,11 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				view = LayoutInflater.from(parent.getContext())
 						.inflate(R.layout.i_chat_message_out, parent, false);
 				return new OutgoingFileHolder(view);
+			case VIEW_TYPE_SYSTEM_MESSAGE:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_system, parent, false);
+				return new SystemMessageHolder(view);
 		}
-
 		return null;
 	}
 
@@ -92,6 +95,9 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				break;
 			case VIEW_TYPE_FILE_OUTGOING:
 				((OutgoingFileHolder) holder).bind(message);
+				break;
+			case VIEW_TYPE_SYSTEM_MESSAGE:
+				((SystemMessageHolder) holder).bind(message);
 				break;
 		}
 
@@ -131,6 +137,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				}
 			}
 		} else {
+			if (message.isSystem) {
+				return VIEW_TYPE_SYSTEM_MESSAGE;
+			}
+
 			if (message.isIncoming) {
 				return VIEW_TYPE_MESSAGE_INCOMING;
 			} else {
@@ -280,6 +290,20 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
 			messageView.setTextIsSelectable(false);
+		}
+	}
+
+	private static class SystemMessageHolder extends RecyclerView.ViewHolder {
+		TextView messageView;
+
+		SystemMessageHolder(View itemView) {
+			super(itemView);
+
+			messageView = itemView.findViewById(R.id.messageView);
+		}
+
+		void bind(ChatItem message) {
+			messageView.setText(message.content);
 		}
 	}
 

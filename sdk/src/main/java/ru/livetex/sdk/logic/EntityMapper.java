@@ -25,6 +25,7 @@ import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.ResponseEntity;
+import ru.livetex.sdk.entity.SystemUser;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
 import ru.livetex.sdk.entity.User;
@@ -119,9 +120,19 @@ public class EntityMapper {
 		}
 
 		private TextMessage parseTextMessage(JsonElement json) {
-			JsonObject jsonObject = json.getAsJsonObject();
-
 			TextMessage message = gson.fromJson(json, TextMessage.class);
+			parseCreator(message, json);
+			return message;
+		}
+
+		private FileMessage parseFileMessage(JsonElement json) {
+			FileMessage message = gson.fromJson(json, FileMessage.class);
+			parseCreator(message, json);
+			return message;
+		}
+
+		private void parseCreator(GenericMessage message, JsonElement json) {
+			JsonObject jsonObject = json.getAsJsonObject();
 
 			JsonObject creator = jsonObject.getAsJsonObject("creator");
 			String creatorType = creator.get("type").getAsString();
@@ -129,36 +140,18 @@ public class EntityMapper {
 			switch (creatorType) {
 				case Employee.TYPE: {
 					JsonObject creatorObject = creator.getAsJsonObject("employee");
-					message.creator = gson.fromJson(creatorObject, Employee.class);
+					message.setCreator(gson.fromJson(creatorObject, Employee.class));
 					break;
 				}
 				case User.TYPE: {
-					message.creator = gson.fromJson(creator, User.class);
+					message.setCreator(gson.fromJson(creator, User.class));
+					break;
+				}
+				case SystemUser.TYPE: {
+					message.setCreator(gson.fromJson(creator, SystemUser.class));
 					break;
 				}
 			}
-			return message;
-		}
-
-		private FileMessage parseFileMessage(JsonElement json) {
-			JsonObject jsonObject = json.getAsJsonObject();
-
-			FileMessage message = gson.fromJson(json, FileMessage.class);
-
-			JsonObject creator = jsonObject.getAsJsonObject("creator");
-			String creatorType = creator.get("type").getAsString();
-
-			switch (creatorType) {
-				case Employee.TYPE: {
-					message.creator = gson.fromJson(creator, Employee.class);
-					break;
-				}
-				case User.TYPE: {
-					message.creator = gson.fromJson(creator, User.class);
-					break;
-				}
-			}
-			return message;
 		}
 	}
 }

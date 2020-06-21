@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.db.entity.MessageSentState;
 import ru.livetex.sdk.entity.Creator;
+import ru.livetex.sdk.entity.SystemUser;
 
 /**
  * This is wrapper for ChatMessage entity. It allows to use only UI data and also made adapter item mutable (for DiffUtil).
@@ -21,6 +22,7 @@ public class ChatItem implements Comparable<ChatItem> {
 	@NonNull
 	public final Date createdAt; // timestamp in millis
 	public final boolean isIncoming;
+	public final boolean isSystem;
 	public MessageSentState sentState;
 	@Nullable
 	public final String fileUrl; // in case of "file" message
@@ -35,6 +37,7 @@ public class ChatItem implements Comparable<ChatItem> {
 		this.sentState = message.sentState;
 		this.fileUrl = message.fileUrl;
 		this.creator = message.creator;
+		this.isSystem = message.creator instanceof SystemUser;
 	}
 
 	@Override
@@ -84,14 +87,16 @@ public class ChatItem implements Comparable<ChatItem> {
 		}
 		ChatItem chatItem = (ChatItem) o;
 		return isIncoming == chatItem.isIncoming &&
+				isSystem == chatItem.isSystem &&
 				id.equals(chatItem.id) &&
 				content.equals(chatItem.content) &&
 				createdAt.equals(chatItem.createdAt) &&
-				sentState == chatItem.sentState;
+				sentState == chatItem.sentState &&
+				creator == chatItem.creator;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, content, createdAt, isIncoming, sentState);
+		return Objects.hash(id, content, createdAt, isIncoming, isSystem, sentState, creator);
 	}
 }

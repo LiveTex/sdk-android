@@ -40,7 +40,7 @@ public final class ChatMessage implements Comparable<ChatMessage> {
 	}
 
 	// mapped from server file entity
-	public ChatMessage(@NonNull String id, @NonNull String content, @NonNull Date createdAt, boolean isIncoming, @Nullable String fileUrl, Creator creator) {
+	public ChatMessage(@NonNull String id, @NonNull String content, @NonNull Date createdAt, boolean isIncoming, @Nullable String fileUrl, @NonNull Creator creator) {
 		this.id = id;
 		this.content = content;
 		this.createdAt = createdAt;

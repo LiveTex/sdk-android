@@ -29,6 +29,17 @@ public final class FileMessage extends BaseEntity implements GenericMessage {
 	}
 
 	@Override
+	@NonNull
+	public Creator getCreator() {
+		return creator;
+	}
+
+	@Override
+	public void setCreator(@NonNull Creator creator) {
+		this.creator = creator;
+	}
+
+	@Override
 	protected String getType() {
 		return TYPE;
 	}
