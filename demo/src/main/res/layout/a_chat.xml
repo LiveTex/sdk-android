@@ -140,7 +140,7 @@
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
-		tools:visibility="visible">
+		tools:visibility="gone">
 
 		<TextView
 			android:layout_width="match_parent"
@@ -153,11 +153,11 @@
 
 		<LinearLayout
 			android:id="@+id/departmentsButtonContainerView"
-			android:padding="8dp"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
 			android:background="#ECEDF1"
 			android:orientation="vertical"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"/>
+			android:padding="8dp" />
 	</LinearLayout>
 
 	<androidx.constraintlayout.widget.ConstraintLayout
@@ -170,7 +170,7 @@
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
-		tools:visibility="gone">
+		tools:visibility="visible">
 
 		<ImageView
 			android:id="@+id/addView"
@@ -181,32 +181,87 @@
 			android:focusable="true"
 			android:src="@drawable/plus"
 			app:layout_constraintBottom_toBottomOf="@id/inputContainerView"
-			app:layout_constraintStart_toStartOf="parent"
-			app:layout_constraintTop_toTopOf="@id/inputContainerView" />
+			app:layout_constraintStart_toStartOf="parent" />
 
-		<EditText
-			android:id="@+id/inputView"
+		<androidx.constraintlayout.widget.ConstraintLayout
+			android:id="@+id/inputFieldContainerView"
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
 			android:layout_marginStart="8dp"
 			android:layout_marginEnd="8dp"
-			android:background="@drawable/bg_input_field"
-			android:hint="Введите сообщение"
-			android:imeOptions="actionSend"
-			android:importantForAutofill="no"
-			android:inputType="textCapSentences"
-			android:maxLength="4000"
-			android:paddingStart="16dp"
-			android:paddingTop="10dp"
-			android:paddingEnd="16dp"
-			android:paddingBottom="10dp"
-			android:singleLine="true"
-			android:textColor="@android:color/black"
-			android:textColorHint="#C4C4C4"
-			android:textSize="18sp"
 			app:layout_constraintEnd_toStartOf="@+id/sendView"
 			app:layout_constraintStart_toEndOf="@+id/addView"
-			app:layout_constraintTop_toTopOf="parent" />
+			app:layout_constraintTop_toTopOf="parent"
+			tools:background="@drawable/bg_input_field_container">
+
+			<ImageView
+				android:id="@+id/filePreviewView"
+				android:layout_width="80dp"
+				android:layout_height="80dp"
+				android:layout_marginStart="14dp"
+				android:layout_marginTop="12dp"
+				android:adjustViewBounds="true"
+				android:visibility="gone"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toTopOf="parent"
+				tools:src="@drawable/logo"
+				tools:visibility="visible" />
+
+			<TextView
+				android:id="@+id/fileNameView"
+				android:layout_width="0dp"
+				android:layout_height="0dp"
+				android:layout_marginStart="6dp"
+				android:textColor="@android:color/black"
+				android:textSize="16sp"
+				android:visibility="gone"
+				android:ellipsize="end"
+				app:layout_constraintBottom_toBottomOf="@+id/filePreviewView"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toEndOf="@+id/filePreviewView"
+				app:layout_constraintTop_toTopOf="@+id/filePreviewView"
+				tools:text="filename"
+				tools:visibility="visible" />
+
+			<ImageView
+				android:id="@+id/filePreviewDeleteView"
+				android:layout_width="32dp"
+				android:layout_height="32dp"
+				android:clickable="true"
+				android:focusable="true"
+				android:paddingStart="16dp"
+				android:paddingBottom="16dp"
+				android:src="@drawable/close"
+				android:visibility="gone"
+				app:layout_constraintEnd_toEndOf="@+id/filePreviewView"
+				app:layout_constraintTop_toTopOf="@+id/filePreviewView"
+				tools:visibility="visible" />
+
+			<EditText
+				android:id="@+id/inputView"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="6dp"
+				android:background="@drawable/bg_input_field"
+				android:hint="Введите сообщение"
+				android:imeOptions="actionSend"
+				android:importantForAutofill="no"
+				android:inputType="textCapSentences"
+				android:maxLength="4000"
+				android:paddingStart="16dp"
+				android:paddingTop="10dp"
+				android:paddingEnd="16dp"
+				android:paddingBottom="10dp"
+				android:singleLine="true"
+				android:textColor="@android:color/black"
+				android:textColorHint="#C4C4C4"
+				android:textSize="18sp"
+				app:layout_constraintBottom_toBottomOf="parent"
+				app:layout_constraintEnd_toEndOf="parent"
+				app:layout_constraintStart_toStartOf="parent"
+				app:layout_constraintTop_toBottomOf="@+id/filePreviewView"
+				app:layout_goneMarginTop="0dp" />
+		</androidx.constraintlayout.widget.ConstraintLayout>
 
 		<ImageView
 			android:id="@+id/sendView"
@@ -217,8 +272,7 @@
 			android:focusable="true"
 			android:src="@drawable/send"
 			app:layout_constraintBottom_toBottomOf="@+id/inputContainerView"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintTop_toTopOf="@+id/inputContainerView" />
+			app:layout_constraintEnd_toEndOf="parent" />
 	</androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

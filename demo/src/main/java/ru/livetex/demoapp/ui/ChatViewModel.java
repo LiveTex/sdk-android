@@ -1,6 +1,7 @@
 package ru.livetex.demoapp.ui;
 
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -44,6 +45,9 @@ public final class ChatViewModel extends ViewModel {
 	final MutableLiveData<DialogState> dialogStateUpdateLiveData = new MutableLiveData<>();
 	final MutableLiveData<ChatViewState> viewStateLiveData = new MutableLiveData<>(ChatViewState.NORMAL);
 	final MutableLiveData<String> errorLiveData = new MutableLiveData<>();
+
+	// File for upload
+	Uri selectedFile = null;
 
 	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
 	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
@@ -236,6 +240,10 @@ public final class ChatViewModel extends ViewModel {
 				.doOnSubscribe(ignore -> {
 					chatMessage.setSentState(MessageSentState.SENDING);
 					ChatState.instance.addOrUpdateMessage(chatMessage);
+
+					// return UI to normal
+					selectedFile = null;
+					viewStateLiveData.postValue(ChatViewState.NORMAL);
 				})
 				.flatMap(messagesHandler::sendFileMessage)
 				.subscribe(resp -> {

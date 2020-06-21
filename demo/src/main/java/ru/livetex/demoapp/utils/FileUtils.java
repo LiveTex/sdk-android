@@ -23,7 +23,7 @@ public final class FileUtils {
 
 		returnedPath = getRealPathFromUri(context, uri);
 
-		//Get the file extension
+		// Get the file extension
 		final MimeTypeMap mime = MimeTypeMap.getSingleton();
 		String subStringExtension = String.valueOf(returnedPath).substring(String.valueOf(returnedPath).lastIndexOf(".") + 1);
 		String extensionFromMime = mime.getExtensionFromMimeType(context.getContentResolver().getType(uri));
@@ -60,11 +60,26 @@ public final class FileUtils {
 		return returnedPath;
 	}
 
-	private static String copyFile(Uri uri, Context context) {
-		return new CopyFileTask(uri).run(context);
+	public static String getMimeType(Context context, Uri uri) {
+		String returnedPath;
+
+		returnedPath = getRealPathFromUri(context, uri);
+
+		final MimeTypeMap mime = MimeTypeMap.getSingleton();
+		String subStringExtension = String.valueOf(returnedPath).substring(String.valueOf(returnedPath).lastIndexOf(".") + 1);
+		String extensionFromMime = mime.getExtensionFromMimeType(context.getContentResolver().getType(uri));
+		if (extensionFromMime == null) {
+			extensionFromMime = mime.getMimeTypeFromExtension(subStringExtension);
+		}
+		return extensionFromMime;
 	}
 
-	private static String getRealPathFromUri(final Context context, final Uri uri) {
+	public static String getFilename(Context context, Uri uri) {
+		String returnedPath = getRealPathFromUri(context, uri);
+		return new File(returnedPath).getName();
+	}
+
+	public static String getRealPathFromUri(final Context context, final Uri uri) {
 		if (DocumentsContract.isDocumentUri(context, uri)) {
 			if (isExternalStorageDocument(uri)) {
 				final String docId = DocumentsContract.getDocumentId(uri);
@@ -149,6 +164,10 @@ public final class FileUtils {
 		}
 
 		return null;
+	}
+
+	private static String copyFile(Uri uri, Context context) {
+		return new CopyFileTask(uri).run(context);
 	}
 
 	private static String getSubFolders(Uri uri) {

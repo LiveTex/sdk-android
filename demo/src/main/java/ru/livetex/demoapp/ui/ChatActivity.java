@@ -14,15 +14,21 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CenterCrop;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.google.android.material.button.MaterialButton;
 import com.tbruyelle.rxpermissions2.RxPermissions;
+import com.yalantis.ucrop.UCrop;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -43,8 +49,10 @@ import ru.livetex.demoapp.db.entity.MessageSentState;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
+import ru.livetex.demoapp.ui.image.ImageActivity;
 import ru.livetex.demoapp.utils.FileUtils;
 import ru.livetex.demoapp.utils.InputUtils;
+import ru.livetex.demoapp.utils.IntentUtils;
 import ru.livetex.demoapp.utils.TextWatcherAdapter;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DialogState;
@@ -52,16 +60,22 @@ import ru.livetex.sdk.network.NetworkManager;
 
 public class ChatActivity extends AppCompatActivity {
 	private static final String TAG = "MainActivity";
-	private static final int PICKFILE_REQUEST_CODE = 1000;
 
 	private final CompositeDisposable disposables = new CompositeDisposable();
+	private final RxPermissions rxPermissions = new RxPermissions(this);
 	private ChatViewModel viewModel;
+	private MessagesAdapter adapter = new MessagesAdapter();
+	private AddFileDialog addFileDialog = null;
+
+	private final static long TEXT_TYPING_DELAY = 500L; // milliseconds
+	private PublishSubject<String> textSubject = PublishSubject.create();
 
 	private EditText inputView;
 	private ImageView addView;
 	private ImageView sendView;
 	private RecyclerView messagesView;
 	private ViewGroup inputContainerView;
+	private ViewGroup inputFieldContainerView;
 	private ViewGroup attributesContainerView;
 	private ViewGroup departmentsContainerView;
 	private ViewGroup departmentsButtonContainerView;
@@ -69,13 +83,9 @@ public class ChatActivity extends AppCompatActivity {
 	private EditText attributesNameView;
 	private EditText attributesPhoneView;
 	private EditText attributesEmailView;
-
-	private final RxPermissions rxPermissions = new RxPermissions(this);
-
-	private MessagesAdapter adapter = new MessagesAdapter();
-
-	private final long TEXT_TYPING_DELAY = 500; // milliseconds
-	private PublishSubject<String> textSubject = PublishSubject.create();
+	private ImageView filePreviewView;
+	private ImageView filePreviewDeleteView;
+	private TextView fileNameView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -87,6 +97,7 @@ public class ChatActivity extends AppCompatActivity {
 		addView = findViewById(R.id.addView);
 		messagesView = findViewById(R.id.messagesView);
 		inputContainerView = findViewById(R.id.inputContainerView);
+		inputFieldContainerView = findViewById(R.id.inputFieldContainerView);
 		attributesContainerView = findViewById(R.id.attributesContainerView);
 		departmentsContainerView = findViewById(R.id.departmentsContainerView);
 		departmentsButtonContainerView = findViewById(R.id.departmentsButtonContainerView);
@@ -94,6 +105,9 @@ public class ChatActivity extends AppCompatActivity {
 		attributesNameView = findViewById(R.id.attributesNameView);
 		attributesPhoneView = findViewById(R.id.attributesPhoneView);
 		attributesEmailView = findViewById(R.id.attributesEmailView);
+		filePreviewView = findViewById(R.id.filePreviewView);
+		filePreviewDeleteView = findViewById(R.id.filePreviewDeleteView);
+		fileNameView = findViewById(R.id.fileNameView);
 
 		viewModel = new ChatViewModelFactory(getSharedPreferences("livetex-demo", Context.MODE_PRIVATE)).create(ChatViewModel.class);
 
@@ -113,18 +127,66 @@ public class ChatActivity extends AppCompatActivity {
 	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
 
-		if (requestCode == PICKFILE_REQUEST_CODE && resultCode == Activity.RESULT_OK && data != null) {
-			Uri uri = data.getData();
-			if (uri == null) {
-				Toast.makeText(this, "Не удалось открыть файл", Toast.LENGTH_SHORT).show();
-				return;
+		switch (requestCode) {
+			case AddFileDialog.RequestCodes.CAMERA: {
+				addFileDialog.close();
+				if (resultCode == Activity.RESULT_OK) {
+					addFileDialog.crop(this, addFileDialog.getSourceFileUri());
+				}
+				break;
 			}
-			Disposable d = Single
-					.fromCallable(() -> FileUtils.getPath(this, uri))
-					.subscribeOn(Schedulers.io())
-					.subscribe(path -> {
-						viewModel.sendFile(path);
-					}, thr -> Log.e(TAG, "onFile", thr));
+			case AddFileDialog.RequestCodes.SELECT_IMAGE_OR_VIDEO: {
+				addFileDialog.close();
+				if (resultCode == Activity.RESULT_OK) {
+					Uri uri = data.getData();
+					if (uri == null) {
+						Toast.makeText(this, "Не удалось открыть файл", Toast.LENGTH_SHORT).show();
+						return;
+					}
+					Disposable d = Single
+							.fromCallable(() -> FileUtils.getPath(this, uri))
+							.subscribeOn(Schedulers.io())
+							.observeOn(AndroidSchedulers.mainThread())
+							.subscribe(path -> {
+								Uri newUri = Uri.fromFile(new File(path));
+								if (!FileUtils.getMimeType(this, newUri).contains("video")) {
+									addFileDialog.crop(this, newUri);
+								} else {
+									onFileSelected(newUri);
+								}
+							}, thr -> Log.e(TAG, "SELECT_IMAGE_OR_VIDEO", thr));
+				}
+				break;
+			}
+			case AddFileDialog.RequestCodes.SELECT_FILE: {
+				addFileDialog.close();
+				if (resultCode == Activity.RESULT_OK) {
+					Uri uri = data.getData();
+					if (uri == null) {
+						Toast.makeText(this, "Не удалось открыть файл", Toast.LENGTH_SHORT).show();
+						return;
+					}
+					Disposable d = Single
+							.fromCallable(() -> FileUtils.getPath(this, uri))
+							.subscribeOn(Schedulers.io())
+							.observeOn(AndroidSchedulers.mainThread())
+							.subscribe(path -> {
+								onFileSelected(Uri.fromFile(new File(path)));
+							}, thr -> Log.e(TAG, "SELECT_FILE", thr));
+				}
+				break;
+			}
+			case UCrop.REQUEST_CROP: {
+				if (resultCode == Activity.RESULT_OK) {
+					final Uri resultUri = UCrop.getOutput(data);
+					if (resultUri == null) {
+						Log.e(TAG, "crop: resultUri == null");
+						return;
+					}
+					onFileSelected(resultUri);
+				}
+				break;
+			}
 		}
 	}
 
@@ -137,6 +199,21 @@ public class ChatActivity extends AppCompatActivity {
 				ChatMessage message = ChatState.instance.getMessage(item.id);
 				if (message != null) {
 					viewModel.resendMessage(message);
+				}
+			} else {
+				if (item.fileUrl != null) {
+					// Download file or open full screen image
+					// todo: will be something better in future
+					boolean isImgFile = item.fileUrl.contains("jpg") ||
+							item.fileUrl.contains("jpeg") ||
+							item.fileUrl.contains("png") ||
+							item.fileUrl.contains("bmp");
+
+					if (isImgFile) {
+						ImageActivity.start(this, item.fileUrl);
+					} else {
+						IntentUtils.goUrl(this, item.fileUrl);
+					}
 				}
 			}
 		});
@@ -176,7 +253,17 @@ public class ChatActivity extends AppCompatActivity {
 
 	private void setupInput() {
 		// --- Chat input
-		sendView.setOnClickListener(v -> sendMessage());
+		sendView.setOnClickListener(v -> {
+			// Send file or message
+			if (viewModel.selectedFile != null) {
+				String path = FileUtils.getRealPathFromUri(this, viewModel.selectedFile);
+				if (path != null) {
+					viewModel.sendFile(path);
+				}
+			} else {
+				sendMessage();
+			}
+		});
 
 		inputView.setOnEditorActionListener((v, actionId, event) -> {
 			if (actionId == EditorInfo.IME_ACTION_SEND) {
@@ -187,22 +274,14 @@ public class ChatActivity extends AppCompatActivity {
 		});
 
 		addView.setOnClickListener(v -> {
+			InputUtils.hideKeyboard(this);
 			disposables.add(rxPermissions
 					.request(Manifest.permission.READ_EXTERNAL_STORAGE)
 					.subscribe(granted -> {
 						if (granted) {
-							Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-							intent.setType("*/*");
-							//intent.addCategory(Intent.CATEGORY_OPENABLE);
-
-							try {
-								startActivityForResult(
-										Intent.createChooser(intent, "Выберите файл для загрузки"),
-										PICKFILE_REQUEST_CODE);
-							} catch (android.content.ActivityNotFoundException ex) {
-								Toast.makeText(this, "Установите файл менеджер",
-										Toast.LENGTH_SHORT).show();
-							}
+							addFileDialog = new AddFileDialog(this);
+							addFileDialog.show();
+							addFileDialog.attach(this);
 						} else {
 							// Oops permission denied
 						}
@@ -223,6 +302,11 @@ public class ChatActivity extends AppCompatActivity {
 				// notify about typing
 				textSubject.onNext(editable.toString());
 			}
+		});
+
+		filePreviewDeleteView.setOnClickListener(v -> {
+			viewModel.selectedFile = null;
+			viewModel.viewStateLiveData.setValue(ChatViewState.NORMAL);
 		});
 
 		// --- Attributes
@@ -253,6 +337,44 @@ public class ChatActivity extends AppCompatActivity {
 				inputContainerView.setVisibility(View.VISIBLE);
 				attributesContainerView.setVisibility(View.GONE);
 				departmentsContainerView.setVisibility(View.GONE);
+
+				// Unset everything from SEND_FILE_PREVIEW
+				inputFieldContainerView.setBackground(null);
+				inputView.setEnabled(true);
+				filePreviewView.setVisibility(View.GONE);
+				filePreviewDeleteView.setVisibility(View.GONE);
+				fileNameView.setVisibility(View.GONE);
+				break;
+			case SEND_FILE_PREVIEW:
+				// gray background
+				inputFieldContainerView.setBackgroundResource(R.drawable.bg_input_field_container);
+				inputView.setEnabled(false);
+				// file preview img
+				filePreviewView.setVisibility(View.VISIBLE);
+				filePreviewDeleteView.setVisibility(View.VISIBLE);
+
+				String mime = FileUtils.getMimeType(this, viewModel.selectedFile);
+
+				if (mime.contains("image")) {
+					Glide.with(this)
+							.load(viewModel.selectedFile)
+							.placeholder(R.drawable.placeholder)
+							.error(R.drawable.placeholder)
+							.dontAnimate()
+							.transform(new CenterCrop(), new RoundedCorners(getResources().getDimensionPixelOffset(R.dimen.chat_upload_preview_corner_radius)))
+							.into(filePreviewView);
+				} else {
+					Glide.with(this)
+							.load(R.drawable.doc_big)
+							.dontAnimate()
+							.transform(new CenterCrop(), new RoundedCorners(getResources().getDimensionPixelOffset(R.dimen.chat_upload_preview_corner_radius)))
+							.into(filePreviewView);
+
+					String filename = FileUtils.getFilename(this, viewModel.selectedFile);
+					fileNameView.setVisibility(View.VISIBLE);
+					fileNameView.setText(filename);
+				}
+
 				break;
 			case ATTRIBUTES:
 				InputUtils.hideKeyboard(this);
@@ -280,11 +402,9 @@ public class ChatActivity extends AppCompatActivity {
 		}
 	}
 
-	private void onError(String msg) {
-		if (TextUtils.isEmpty(msg)) {
-			return;
-		}
-		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+	private void onFileSelected(Uri file) {
+		viewModel.selectedFile = file;
+		viewModel.viewStateLiveData.setValue(ChatViewState.SEND_FILE_PREVIEW);
 	}
 
 	private void sendMessage() {
@@ -319,10 +439,21 @@ public class ChatActivity extends AppCompatActivity {
 		}
 	}
 
+	private void onError(String msg) {
+		if (TextUtils.isEmpty(msg)) {
+			return;
+		}
+		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+	}
+
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
 		disposables.clear();
+		if (addFileDialog != null && addFileDialog.isShowing()) {
+			addFileDialog.close();
+			addFileDialog = null;
+		}
 	}
 
 	private void updateDialogState(DialogState dialogState) {

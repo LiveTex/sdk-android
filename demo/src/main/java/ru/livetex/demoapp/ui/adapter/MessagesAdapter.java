@@ -25,8 +25,11 @@ import ru.livetex.sdk.entity.Employee;
 public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 	private static final int VIEW_TYPE_MESSAGE_INCOMING = 1;
 	private static final int VIEW_TYPE_MESSAGE_OUTGOING = 2;
-	private static final int VIEW_TYPE_FILE_INCOMING = 3;
-	private static final int VIEW_TYPE_FILE_OUTGOING = 4;
+	private static final int VIEW_TYPE_IMAGE_INCOMING = 3;
+	private static final int VIEW_TYPE_IMAGE_OUTGOING = 4;
+	private static final int VIEW_TYPE_FILE_INCOMING = 5;
+	private static final int VIEW_TYPE_FILE_OUTGOING = 6;
+
 
 	private List<ChatItem> messages = new ArrayList<>();
 	@Nullable
@@ -37,22 +40,31 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 		View view;
 
-		if (viewType == VIEW_TYPE_MESSAGE_INCOMING) {
-			view = LayoutInflater.from(parent.getContext())
-					.inflate(R.layout.i_chat_message_in, parent, false);
-			return new IncomingMessageHolder(view);
-		} else if (viewType == VIEW_TYPE_MESSAGE_OUTGOING) {
-			view = LayoutInflater.from(parent.getContext())
-					.inflate(R.layout.i_chat_message_out, parent, false);
-			return new OutgoingMessageHolder(view);
-		} else if (viewType == VIEW_TYPE_FILE_INCOMING) {
-			view = LayoutInflater.from(parent.getContext())
-					.inflate(R.layout.i_chat_message_file_in, parent, false);
-			return new IncomingFileHolder(view);
-		} else if (viewType == VIEW_TYPE_FILE_OUTGOING) {
-			view = LayoutInflater.from(parent.getContext())
-					.inflate(R.layout.i_chat_message_file_out, parent, false);
-			return new OutgoingFileHolder(view);
+		switch (viewType) {
+			case VIEW_TYPE_MESSAGE_INCOMING:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_in, parent, false);
+				return new IncomingMessageHolder(view);
+			case VIEW_TYPE_MESSAGE_OUTGOING:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_out, parent, false);
+				return new OutgoingMessageHolder(view);
+			case VIEW_TYPE_IMAGE_INCOMING:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_image_in, parent, false);
+				return new IncomingImageHolder(view);
+			case VIEW_TYPE_IMAGE_OUTGOING:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_image_out, parent, false);
+				return new OutgoingImageHolder(view);
+			case VIEW_TYPE_FILE_INCOMING:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_in, parent, false);
+				return new IncomingFileHolder(view);
+			case VIEW_TYPE_FILE_OUTGOING:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_out, parent, false);
+				return new OutgoingFileHolder(view);
 		}
 
 		return null;
@@ -68,6 +80,12 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				break;
 			case VIEW_TYPE_MESSAGE_OUTGOING:
 				((OutgoingMessageHolder) holder).bind(message);
+				break;
+			case VIEW_TYPE_IMAGE_INCOMING:
+				((IncomingImageHolder) holder).bind(message);
+				break;
+			case VIEW_TYPE_IMAGE_OUTGOING:
+				((OutgoingImageHolder) holder).bind(message);
 				break;
 			case VIEW_TYPE_FILE_INCOMING:
 				((IncomingFileHolder) holder).bind(message);
@@ -93,10 +111,24 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		ChatItem message = messages.get(position);
 
 		if (!TextUtils.isEmpty(message.fileUrl)) {
-			if (message.isIncoming) {
-				return VIEW_TYPE_FILE_INCOMING;
+			// todo: will be something better in future
+			boolean isImgFile = message.fileUrl.contains("jpg") ||
+					message.fileUrl.contains("jpeg") ||
+					message.fileUrl.contains("png") ||
+					message.fileUrl.contains("bmp");
+
+			if (isImgFile) {
+				if (message.isIncoming) {
+					return VIEW_TYPE_IMAGE_INCOMING;
+				} else {
+					return VIEW_TYPE_IMAGE_OUTGOING;
+				}
 			} else {
-				return VIEW_TYPE_FILE_OUTGOING;
+				if (message.isIncoming) {
+					return VIEW_TYPE_FILE_INCOMING;
+				} else {
+					return VIEW_TYPE_FILE_OUTGOING;
+				}
 			}
 		} else {
 			if (message.isIncoming) {
@@ -144,8 +176,8 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			messageView.setText(message.content);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = ((Employee)message.creator).avatarUrl;
-			String opName = ((Employee)message.creator).name;
+			String avatarUrl = ((Employee) message.creator).avatarUrl;
+			String opName = ((Employee) message.creator).name;
 
 			if (!TextUtils.isEmpty(avatarUrl)) {
 				Glide.with(avatarView.getContext())
@@ -179,19 +211,85 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 		void bind(ChatItem message) {
 			messageView.setText(message.content);
-			messageView.setBackgroundResource(R.drawable.rounded_rectangle_blue);
 
 			timeView.setText(DateUtils.timestampToTime(message.createdAt));
 		}
 	}
 
 	private static class IncomingFileHolder extends RecyclerView.ViewHolder {
-		ImageView imageView;
+		TextView messageView;
 		ImageView avatarView;
 		TextView nameView;
 		TextView timeView;
 
 		IncomingFileHolder(View itemView) {
+			super(itemView);
+
+			nameView = itemView.findViewById(R.id.nameView);
+			messageView = itemView.findViewById(R.id.messageView);
+			avatarView = itemView.findViewById(R.id.avatarView);
+			timeView = itemView.findViewById(R.id.timeView);
+		}
+
+		void bind(ChatItem message) {
+			messageView.setText(message.content);
+
+			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
+			String avatarUrl = ((Employee) message.creator).avatarUrl;
+			String opName = ((Employee) message.creator).name;
+
+			if (!TextUtils.isEmpty(avatarUrl)) {
+				Glide.with(avatarView.getContext())
+						.load(avatarUrl)
+						.placeholder(R.drawable.logo)
+						.error(R.drawable.logo)
+						.centerCrop()
+						.dontAnimate()
+						.apply(RequestOptions.circleCropTransform())
+						.into(avatarView);
+			} else {
+				avatarView.setImageResource(R.drawable.logo);
+			}
+
+			nameView.setText(opName);
+
+			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
+			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
+			messageView.setTextIsSelectable(false);
+
+			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+		}
+	}
+
+	private static class OutgoingFileHolder extends RecyclerView.ViewHolder {
+		TextView messageView;
+		TextView timeView;
+
+		OutgoingFileHolder(View itemView) {
+			super(itemView);
+
+			messageView = itemView.findViewById(R.id.messageView);
+			timeView = itemView.findViewById(R.id.timeView);
+		}
+
+		void bind(ChatItem message) {
+			messageView.setText(message.content);
+
+			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+
+			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
+			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
+			messageView.setTextIsSelectable(false);
+		}
+	}
+
+	private static class IncomingImageHolder extends RecyclerView.ViewHolder {
+		ImageView imageView;
+		ImageView avatarView;
+		TextView nameView;
+		TextView timeView;
+
+		IncomingImageHolder(View itemView) {
 			super(itemView);
 
 			imageView = itemView.findViewById(R.id.image);
@@ -204,8 +302,8 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			loadImage(message, imageView);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = ((Employee)message.creator).avatarUrl;
-			String opName = ((Employee)message.creator).name;
+			String avatarUrl = ((Employee) message.creator).avatarUrl;
+			String opName = ((Employee) message.creator).name;
 
 			if (!TextUtils.isEmpty(avatarUrl)) {
 				Glide.with(avatarView.getContext())
@@ -226,11 +324,11 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		}
 	}
 
-	private static class OutgoingFileHolder extends RecyclerView.ViewHolder {
+	private static class OutgoingImageHolder extends RecyclerView.ViewHolder {
 		ImageView imageView;
 		TextView timeView;
 
-		OutgoingFileHolder(View itemView) {
+		OutgoingImageHolder(View itemView) {
 			super(itemView);
 
 			imageView = itemView.findViewById(R.id.image);
