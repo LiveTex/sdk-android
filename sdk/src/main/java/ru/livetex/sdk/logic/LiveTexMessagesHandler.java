@@ -1,9 +1,11 @@
 package ru.livetex.sdk.logic;
 
 import android.util.Log;
+import android.util.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import androidx.annotation.Nullable;
 import io.reactivex.Single;
@@ -20,6 +22,7 @@ import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.EmployeeTypingEvent;
 import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.FileUploadedResponse;
+import ru.livetex.sdk.entity.GetHistoryRequest;
 import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.ResponseEntity;
 import ru.livetex.sdk.entity.TextMessage;
@@ -35,6 +38,7 @@ public class LiveTexMessagesHandler {
 	private final PublishSubject<EmployeeTypingEvent> employeeTypingSubject = PublishSubject.create();
 	private final PublishSubject<AttributesRequest> attributesRequestSubject = PublishSubject.create();
 	private final PublishSubject<DepartmentRequestEntity> departmentRequestSubject = PublishSubject.create();
+	private Pair<String, Subject<Integer>> getHistorySubscription = null;
 	protected final HashMap<String, Subject> subscriptions = new HashMap<>();
 
 	protected EntityMapper mapper = new EntityMapper();
@@ -43,6 +47,7 @@ public class LiveTexMessagesHandler {
 		Disposable disposable = NetworkManager.getInstance().connectionState()
 				.filter(state -> state == NetworkManager.ConnectionState.DISCONNECTED)
 				.subscribe(ignore -> {
+					// Cleanup on disconnect
 					Log.i(TAG, "Disconnect detected, clearing subscriptions");
 					for (Subject subj : subscriptions.values()) {
 						if (!subj.hasComplete()) {
@@ -50,6 +55,10 @@ public class LiveTexMessagesHandler {
 						}
 					}
 					subscriptions.clear();
+					if (getHistorySubscription != null) {
+						getHistorySubscription.second.onError(new IllegalStateException("Websocket disconnect"));
+						getHistorySubscription = null;
+					}
 				}, thr -> Log.e(TAG, "", thr));
 	}
 
@@ -73,6 +82,11 @@ public class LiveTexMessagesHandler {
 			dialogStateSubject.onNext((DialogState) entity);
 		} else if (entity instanceof HistoryEntity) {
 			historyUpdateSubject.onNext((HistoryEntity) entity);
+			// Notify about count of previous messages loaded by get history request
+			if (getHistorySubscription != null && Objects.equals(entity.correlationId, getHistorySubscription.first)) {
+				getHistorySubscription.second.onNext(((HistoryEntity) entity).messages.size());
+				getHistorySubscription = null;
+			}
 		} else if (entity instanceof EmployeeTypingEvent) {
 			employeeTypingSubject.onNext((EmployeeTypingEvent) entity);
 		} else if (entity instanceof AttributesRequest) {
@@ -96,6 +110,36 @@ public class LiveTexMessagesHandler {
 
 	public void setMapper(EntityMapper mapper) {
 		this.mapper = mapper;
+	}
+
+	/**
+	 * Request chunk of previous messages in chat history
+	 * @return subscription with count of previous messages loaded
+	 */
+	public Single<Integer> getHistory(String messageId) {
+		return getHistory(messageId, 20);
+	}
+
+	/**
+	 * Request chunk of previous messages in chat history
+	 * @param count - count (limit) of messages to load
+	 * @return subscription with count of previous messages loaded
+	 */
+	public Single<Integer> getHistory(String messageId, int count) {
+		GetHistoryRequest event = new GetHistoryRequest(messageId, count);
+		String json = EntityMapper.gson.toJson(event);
+
+		if (NetworkManager.getInstance().getWebSocket() != null) {
+			getHistorySubscription = Pair.create(event.correlationId, PublishSubject.create());
+			try {
+				sendJson(json);
+			} catch (Exception e) {
+				return Single.error(e);
+			}
+			return getHistorySubscription.second.take(1).singleOrError();
+		} else {
+			return Single.error(new IllegalStateException("Trying to send data when websocket is null"));
+		}
 	}
 
 	public void sendTypingEvent(String text) {

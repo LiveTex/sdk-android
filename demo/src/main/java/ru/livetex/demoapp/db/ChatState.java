@@ -12,7 +12,6 @@ import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import ru.livetex.demoapp.db.entity.ChatMessage;
-import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.User;
 
 /**
@@ -24,15 +23,9 @@ public final class ChatState {
 
 	private Map<String, ChatMessage> messages = new ConcurrentHashMap<>();
 	private BehaviorSubject<List<ChatMessage>> messagesSubject = BehaviorSubject.createDefault(Collections.emptyList());
-	private DialogState dialogState = null;
-
-	public void setDialogState(DialogState dialogState) {
-		this.dialogState = dialogState;
-	}
-
-	public DialogState getDialogState() {
-		return dialogState;
-	}
+	// Indicates that chat possible has previous messages (GetHistoryRequest can be done on scroll chat to top).
+	// Initially it can be always true and set to false when HistoryEntity (related to GetHistoryRequest) messages count < offset.
+	public boolean canPreloadChatMessages = true;
 
 	public Observable<List<ChatMessage>> messages() {
 		return messagesSubject

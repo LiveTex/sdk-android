@@ -106,10 +106,7 @@ public final class ChatViewModel extends ViewModel {
 
 		disposables.add(messagesHandler.dialogStateUpdate()
 				.observeOn(Schedulers.io())
-				.subscribe(dialogState -> {
-					ChatState.instance.setDialogState(dialogState);
-					dialogStateUpdateLiveData.postValue(dialogState);
-				}, thr -> {
+				.subscribe(dialogStateUpdateLiveData::postValue, thr -> {
 					Log.e(TAG, "dialogStateUpdate", thr);
 				}));
 
@@ -282,5 +279,22 @@ public final class ChatViewModel extends ViewModel {
 					Log.e(TAG, "connect", e);
 					errorLiveData.postValue("Ошибка соединения " + e.getMessage());
 				}));
+	}
+
+	public boolean canPreloadMessages() {
+		return ChatState.instance.canPreloadChatMessages;
+	}
+
+	public void loadPreviousMessages(String messageId, int count) {
+		Disposable d = messagesHandler.getHistory(messageId, count)
+				.subscribeOn(Schedulers.io())
+				.observeOn(Schedulers.io())
+				.subscribe(preloadedCount -> {
+					if (preloadedCount < count) {
+						ChatState.instance.canPreloadChatMessages = false;
+					}
+				}, e -> {
+					Log.e(TAG, "loadPreviousMessages", e);
+				});
 	}
 }

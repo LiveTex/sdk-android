@@ -5,4 +5,6 @@ public interface Const {
 	String TOUCHPOINT = "token";
 
 	String KEY_CLIENTID = "KEY_CLIENTID";
+
+	int PRELOAD_MESSAGES_COUNT = 20;
 }

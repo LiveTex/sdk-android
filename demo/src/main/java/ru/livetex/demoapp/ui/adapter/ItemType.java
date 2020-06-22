@@ -1,6 +1,6 @@
 package ru.livetex.demoapp.ui.adapter;
 
-enum ItemType {
+public enum ItemType {
 	CHAT_MESSAGE,
 	DATE
 }

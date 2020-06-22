@@ -42,6 +42,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.PublishSubject;
+import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.entity.ChatMessage;
@@ -50,12 +51,14 @@ import ru.livetex.demoapp.ui.adapter.AdapterItem;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.DateItem;
+import ru.livetex.demoapp.ui.adapter.ItemType;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
 import ru.livetex.demoapp.ui.image.ImageActivity;
 import ru.livetex.demoapp.utils.DateUtils;
 import ru.livetex.demoapp.utils.FileUtils;
 import ru.livetex.demoapp.utils.InputUtils;
 import ru.livetex.demoapp.utils.IntentUtils;
+import ru.livetex.demoapp.utils.RecyclerViewScrollListener;
 import ru.livetex.demoapp.utils.TextWatcherAdapter;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DialogState;
@@ -227,6 +230,30 @@ public class ChatActivity extends AppCompatActivity {
 //		dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider));
 //		messagesView.addItemDecoration(dividerItemDecoration);
 		((SimpleItemAnimator) messagesView.getItemAnimator()).setSupportsChangeAnimations(false);
+
+		messagesView.addOnScrollListener(new RecyclerViewScrollListener((LinearLayoutManager) messagesView.getLayoutManager()) {
+			@Override
+			public void onLoadRequest() {
+				String firstMessageId = null;
+				for (AdapterItem adapterItem : adapter.getData()) {
+					if (adapterItem.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
+						firstMessageId = ((ChatItem)adapterItem).getId();
+						break;
+					}
+				}
+
+				viewModel.loadPreviousMessages(firstMessageId, Const.PRELOAD_MESSAGES_COUNT);
+			}
+
+			@Override
+			public boolean canLoadMore() {
+				return viewModel.canPreloadMessages();
+			}
+
+			@Override
+			protected void onScrollDown() {
+			}
+		});
 
 		disposables.add(ChatState.instance.messages()
 				.observeOn(AndroidSchedulers.mainThread())
