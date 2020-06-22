@@ -33,7 +33,6 @@ import com.yalantis.ucrop.UCrop;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
 import io.reactivex.Single;
@@ -46,10 +45,13 @@ import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.db.entity.MessageSentState;
+import ru.livetex.demoapp.ui.adapter.AdapterItem;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
+import ru.livetex.demoapp.ui.adapter.DateItem;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
 import ru.livetex.demoapp.ui.image.ImageActivity;
+import ru.livetex.demoapp.utils.DateUtils;
 import ru.livetex.demoapp.utils.FileUtils;
 import ru.livetex.demoapp.utils.InputUtils;
 import ru.livetex.demoapp.utils.IntentUtils;
@@ -219,10 +221,10 @@ public class ChatActivity extends AppCompatActivity {
 		});
 
 		messagesView.setAdapter(adapter);
-		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(messagesView.getContext(),
-				DividerItemDecoration.VERTICAL);
-		dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider));
-		messagesView.addItemDecoration(dividerItemDecoration);
+//		DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(messagesView.getContext(),
+//				DividerItemDecoration.VERTICAL);
+//		dividerItemDecoration.setDrawable(getResources().getDrawable(R.drawable.divider));
+//		messagesView.addItemDecoration(dividerItemDecoration);
 		((SimpleItemAnimator) messagesView.getItemAnimator()).setSupportsChangeAnimations(false);
 
 		disposables.add(ChatState.instance.messages()
@@ -231,22 +233,28 @@ public class ChatActivity extends AppCompatActivity {
 	}
 
 	private void setMessages(List<ChatMessage> chatMessages) {
-		List<ChatItem> items = new ArrayList<>();
-		boolean needScroll = chatMessages.size() > adapter.getItemCount();
+		List<AdapterItem> items = new ArrayList<>();
+		List<String> days = new ArrayList<>();
+		boolean needAutoScroll = chatMessages.size() > adapter.getItemCount();
 
 		for (ChatMessage chatMessage : chatMessages) {
+			String dayDate = DateUtils.dateToDay(chatMessage.createdAt);
+			if (!days.contains(dayDate)) {
+				days.add(dayDate);
+				items.add(new DateItem(dayDate));
+			}
 			items.add(new ChatItem(chatMessage));
 		}
 		Collections.sort(items);
 
 		ChatMessageDiffUtil diffUtil =
 				new ChatMessageDiffUtil(adapter.getData(), items);
-		DiffUtil.DiffResult productDiffResult = DiffUtil.calculateDiff(diffUtil);
+		DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(diffUtil);
 
 		adapter.setData(items);
-		productDiffResult.dispatchUpdatesTo(adapter);
+		diffResult.dispatchUpdatesTo(adapter);
 
-		if (needScroll) {
+		if (needAutoScroll) {
 			messagesView.smoothScrollToPosition(adapter.getItemCount() - 1);
 		}
 	}

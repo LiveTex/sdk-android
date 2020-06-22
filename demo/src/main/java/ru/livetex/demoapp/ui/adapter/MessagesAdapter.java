@@ -30,8 +30,9 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static final int VIEW_TYPE_FILE_INCOMING = 5;
 	private static final int VIEW_TYPE_FILE_OUTGOING = 6;
 	private static final int VIEW_TYPE_SYSTEM_MESSAGE = 7;
+	private static final int VIEW_TYPE_DATE = 8;
 
-	private List<ChatItem> messages = new ArrayList<>();
+	private List<AdapterItem> messages = new ArrayList<>();
 	@Nullable
 	private Consumer<ChatItem> onMessageClickListener = null;
 
@@ -69,42 +70,49 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				view = LayoutInflater.from(parent.getContext())
 						.inflate(R.layout.i_chat_message_system, parent, false);
 				return new SystemMessageHolder(view);
+			case VIEW_TYPE_DATE:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_date, parent, false);
+				return new DateHolder(view);
 		}
 		return null;
 	}
 
 	@Override
 	public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-		final ChatItem message = messages.get(position);
+		final AdapterItem message = messages.get(position);
 
 		switch (holder.getItemViewType()) {
 			case VIEW_TYPE_MESSAGE_INCOMING:
-				((IncomingMessageHolder) holder).bind(message);
+				((IncomingMessageHolder) holder).bind((ChatItem) message);
 				break;
 			case VIEW_TYPE_MESSAGE_OUTGOING:
-				((OutgoingMessageHolder) holder).bind(message);
+				((OutgoingMessageHolder) holder).bind((ChatItem) message);
 				break;
 			case VIEW_TYPE_IMAGE_INCOMING:
-				((IncomingImageHolder) holder).bind(message);
+				((IncomingImageHolder) holder).bind((ChatItem) message);
 				break;
 			case VIEW_TYPE_IMAGE_OUTGOING:
-				((OutgoingImageHolder) holder).bind(message);
+				((OutgoingImageHolder) holder).bind((ChatItem) message);
 				break;
 			case VIEW_TYPE_FILE_INCOMING:
-				((IncomingFileHolder) holder).bind(message);
+				((IncomingFileHolder) holder).bind((ChatItem) message);
 				break;
 			case VIEW_TYPE_FILE_OUTGOING:
-				((OutgoingFileHolder) holder).bind(message);
+				((OutgoingFileHolder) holder).bind((ChatItem) message);
 				break;
 			case VIEW_TYPE_SYSTEM_MESSAGE:
-				((SystemMessageHolder) holder).bind(message);
+				((SystemMessageHolder) holder).bind((ChatItem) message);
+				break;
+			case VIEW_TYPE_DATE:
+				((DateHolder) holder).bind((DateItem) message);
 				break;
 		}
 
-		if (onMessageClickListener != null) {
+		if (onMessageClickListener != null && message.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
 			holder.itemView.setOnClickListener(view -> {
 				try {
-					onMessageClickListener.accept(message);
+					onMessageClickListener.accept((ChatItem) message);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -114,39 +122,47 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 	@Override
 	public int getItemViewType(int position) {
-		ChatItem message = messages.get(position);
+		AdapterItem item = messages.get(position);
 
-		if (!TextUtils.isEmpty(message.fileUrl)) {
-			// todo: will be something better in future
-			boolean isImgFile = message.fileUrl.contains("jpg") ||
-					message.fileUrl.contains("jpeg") ||
-					message.fileUrl.contains("png") ||
-					message.fileUrl.contains("bmp");
+		if (item.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
+			ChatItem message = (ChatItem) item;
 
-			if (isImgFile) {
-				if (message.isIncoming) {
-					return VIEW_TYPE_IMAGE_INCOMING;
+			if (!TextUtils.isEmpty(message.fileUrl)) {
+				// todo: will be something better in future
+				boolean isImgFile = message.fileUrl.contains("jpg") ||
+						message.fileUrl.contains("jpeg") ||
+						message.fileUrl.contains("png") ||
+						message.fileUrl.contains("bmp");
+
+				if (isImgFile) {
+					if (message.isIncoming) {
+						return VIEW_TYPE_IMAGE_INCOMING;
+					} else {
+						return VIEW_TYPE_IMAGE_OUTGOING;
+					}
 				} else {
-					return VIEW_TYPE_IMAGE_OUTGOING;
+					if (message.isIncoming) {
+						return VIEW_TYPE_FILE_INCOMING;
+					} else {
+						return VIEW_TYPE_FILE_OUTGOING;
+					}
 				}
 			} else {
+				if (message.isSystem) {
+					return VIEW_TYPE_SYSTEM_MESSAGE;
+				}
+
 				if (message.isIncoming) {
-					return VIEW_TYPE_FILE_INCOMING;
+					return VIEW_TYPE_MESSAGE_INCOMING;
 				} else {
-					return VIEW_TYPE_FILE_OUTGOING;
+					return VIEW_TYPE_MESSAGE_OUTGOING;
 				}
 			}
-		} else {
-			if (message.isSystem) {
-				return VIEW_TYPE_SYSTEM_MESSAGE;
-			}
-
-			if (message.isIncoming) {
-				return VIEW_TYPE_MESSAGE_INCOMING;
-			} else {
-				return VIEW_TYPE_MESSAGE_OUTGOING;
-			}
+		} else if (item.getAdapterItemType() == ItemType.DATE) {
+			return VIEW_TYPE_DATE;
 		}
+
+		return -1;
 	}
 
 	@Override
@@ -154,11 +170,11 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		return messages.size();
 	}
 
-	public List<ChatItem> getData() {
+	public List<AdapterItem> getData() {
 		return messages;
 	}
 
-	public void setData(List<ChatItem> chatMessages) {
+	public void setData(List<AdapterItem> chatMessages) {
 		this.messages.clear();
 		this.messages.addAll(chatMessages);
 	}
@@ -204,7 +220,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 			nameView.setText(opName);
 
-			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+			timeView.setText(DateUtils.dateToTime(message.createdAt));
 		}
 	}
 
@@ -222,7 +238,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message) {
 			messageView.setText(message.content);
 
-			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+			timeView.setText(DateUtils.dateToTime(message.createdAt));
 		}
 	}
 
@@ -267,7 +283,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
 			messageView.setTextIsSelectable(false);
 
-			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+			timeView.setText(DateUtils.dateToTime(message.createdAt));
 		}
 	}
 
@@ -285,7 +301,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message) {
 			messageView.setText(message.content);
 
-			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+			timeView.setText(DateUtils.dateToTime(message.createdAt));
 
 			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
@@ -306,6 +322,21 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			messageView.setText(message.content);
 		}
 	}
+
+	private static class DateHolder extends RecyclerView.ViewHolder {
+		TextView messageView;
+
+		DateHolder(View itemView) {
+			super(itemView);
+
+			messageView = itemView.findViewById(R.id.messageView);
+		}
+
+		void bind(DateItem message) {
+			messageView.setText(message.text);
+		}
+	}
+
 
 	private static class IncomingImageHolder extends RecyclerView.ViewHolder {
 		ImageView imageView;
@@ -344,7 +375,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 			nameView.setText(opName);
 
-			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+			timeView.setText(DateUtils.dateToTime(message.createdAt));
 		}
 	}
 
@@ -362,7 +393,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message) {
 			loadImage(message, imageView);
 
-			timeView.setText(DateUtils.timestampToTime(message.createdAt));
+			timeView.setText(DateUtils.dateToTime(message.createdAt));
 		}
 	}
 

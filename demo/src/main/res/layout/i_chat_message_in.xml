@@ -2,9 +2,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
-	android:layout_width="wrap_content"
+	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	android:layout_marginStart="18dp">
+	android:paddingBottom="10dp"
+	android:paddingTop="10dp"
+	android:paddingStart="18dp"
+	android:paddingEnd="18dp">
 
 	<TextView
 		android:id="@+id/nameView"
@@ -27,12 +30,12 @@
 
 	<TextView
 		android:id="@+id/messageView"
-		android:layout_width="wrap_content"
+		android:layout_width="0dp"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="6dp"
 		android:layout_marginTop="4dp"
 		android:background="@drawable/bg_gray_rounded"
-		android:maxWidth="300dp"
+		android:maxWidth="270dp"
 		android:minWidth="70dp"
 		android:paddingStart="14dp"
 		android:paddingTop="8dp"

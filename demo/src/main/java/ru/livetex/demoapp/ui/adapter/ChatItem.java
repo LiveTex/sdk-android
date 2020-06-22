@@ -14,7 +14,7 @@ import ru.livetex.sdk.entity.SystemUser;
  * This is wrapper for ChatMessage entity. It allows to use only UI data and also made adapter item mutable (for DiffUtil).
  * In real project fields will differ.
  */
-public class ChatItem implements Comparable<ChatItem> {
+public class ChatItem implements Comparable, AdapterItem {
 	@NonNull
 	public String id;
 	@NonNull
@@ -41,8 +41,11 @@ public class ChatItem implements Comparable<ChatItem> {
 	}
 
 	@Override
-	public int compareTo(ChatItem o) {
-		return createdAt.compareTo(o.createdAt);
+	public int compareTo(Object o) {
+		if (o instanceof ChatItem) {
+			return createdAt.compareTo(((ChatItem) o).createdAt);
+		}
+		return 0;
 	}
 
 	@NonNull
@@ -75,6 +78,11 @@ public class ChatItem implements Comparable<ChatItem> {
 	@NonNull
 	public Creator getCreator() {
 		return creator;
+	}
+
+	@Override
+	public ItemType getAdapterItemType() {
+		return ItemType.CHAT_MESSAGE;
 	}
 
 	@Override
