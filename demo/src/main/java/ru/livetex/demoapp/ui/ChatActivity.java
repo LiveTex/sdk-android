@@ -33,6 +33,7 @@ import com.yalantis.ucrop.UCrop;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
 import io.reactivex.Single;
@@ -235,7 +236,8 @@ public class ChatActivity extends AppCompatActivity {
 	private void setMessages(List<ChatMessage> chatMessages) {
 		List<AdapterItem> items = new ArrayList<>();
 		List<String> days = new ArrayList<>();
-		boolean needAutoScroll = chatMessages.size() > adapter.getItemCount();
+		LinearLayoutManager layoutManager = (LinearLayoutManager) messagesView.getLayoutManager();
+		boolean isLastMessageVisible = adapter.getItemCount() > 0 && layoutManager.findLastVisibleItemPosition() == adapter.getItemCount() - 1;
 
 		for (ChatMessage chatMessage : chatMessages) {
 			String dayDate = DateUtils.dateToDay(chatMessage.createdAt);
@@ -254,7 +256,7 @@ public class ChatActivity extends AppCompatActivity {
 		adapter.setData(items);
 		diffResult.dispatchUpdatesTo(adapter);
 
-		if (needAutoScroll) {
+		if (isLastMessageVisible) {
 			messagesView.smoothScrollToPosition(adapter.getItemCount() - 1);
 		}
 	}
@@ -425,6 +427,9 @@ public class ChatActivity extends AppCompatActivity {
 
 		ChatMessage chatMessage = ChatState.instance.createNewTextMessage(text);
 		inputView.setText(null);
+
+		// wait a bit and scroll to newly created user message
+		inputView.postDelayed(() -> messagesView.smoothScrollToPosition(adapter.getItemCount() - 1), 100);
 
 		viewModel.sendMessage(chatMessage);
 	}
