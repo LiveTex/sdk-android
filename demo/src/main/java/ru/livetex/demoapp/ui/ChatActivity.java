@@ -53,6 +53,7 @@ import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.DateItem;
 import ru.livetex.demoapp.ui.adapter.ItemType;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
+import ru.livetex.demoapp.ui.adapter.EmployeeTypingItem;
 import ru.livetex.demoapp.ui.image.ImageActivity;
 import ru.livetex.demoapp.utils.DateUtils;
 import ru.livetex.demoapp.utils.FileUtils;
@@ -268,11 +269,17 @@ public class ChatActivity extends AppCompatActivity {
 
 		for (ChatMessage chatMessage : chatMessages) {
 			String dayDate = DateUtils.dateToDay(chatMessage.createdAt);
+
 			if (!days.contains(dayDate)) {
 				days.add(dayDate);
 				items.add(new DateItem(dayDate));
 			}
-			items.add(new ChatItem(chatMessage));
+
+			if (!chatMessage.id.equals(ChatMessage.ID_TYPING)) {
+				items.add(new ChatItem(chatMessage));
+			} else {
+				items.add(new EmployeeTypingItem(chatMessage));
+			}
 		}
 		Collections.sort(items);
 
@@ -283,7 +290,7 @@ public class ChatActivity extends AppCompatActivity {
 		adapter.setData(items);
 		diffResult.dispatchUpdatesTo(adapter);
 
-		if (isLastMessageVisible) {
+		if (isLastMessageVisible && adapter.getItemCount() > 0) {
 			messagesView.smoothScrollToPosition(adapter.getItemCount() - 1);
 		}
 	}
@@ -456,7 +463,7 @@ public class ChatActivity extends AppCompatActivity {
 		inputView.setText(null);
 
 		// wait a bit and scroll to newly created user message
-		inputView.postDelayed(() -> messagesView.smoothScrollToPosition(adapter.getItemCount() - 1), 100);
+		inputView.postDelayed(() -> messagesView.smoothScrollToPosition(adapter.getItemCount() - 1), 200);
 
 		viewModel.sendMessage(chatMessage);
 	}

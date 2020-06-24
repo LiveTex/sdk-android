@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 import ru.livetex.demoapp.db.entity.ChatMessage;
+import ru.livetex.sdk.entity.Employee;
 import ru.livetex.sdk.entity.User;
 
 /**
@@ -47,9 +48,11 @@ public final class ChatState {
 		messagesSubject.onNext(new ArrayList<>(messages.values()));
 	}
 
-	public synchronized void removeMessage(String id) {
+	public synchronized void removeMessage(String id, boolean notify) {
 		messages.remove(id);
-		//messagesSubject.onNext(new ArrayList<>(messages.values()));
+		if (notify) {
+			messagesSubject.onNext(new ArrayList<>(messages.values()));
+		}
 	}
 
 	@Nullable
@@ -83,6 +86,23 @@ public final class ChatState {
 				false,
 				filePath,
 				new User()
+		);
+		addOrUpdateMessage(chatMessage);
+		return chatMessage;
+	}
+
+	/**
+	 * Create local typing message
+	 * // todo: id scheme need improvement. now no way to distinguish between sent and local messages (fake and not fake id)
+	 */
+	public synchronized ChatMessage createTypingMessage(Employee employee) {
+		ChatMessage chatMessage = new ChatMessage(
+				"typing",
+				"",
+				new Date(),
+				true,
+				null,
+				employee
 		);
 		addOrUpdateMessage(chatMessage);
 		return chatMessage;

@@ -1,5 +1,7 @@
 package ru.livetex.demoapp.ui.adapter;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -31,6 +33,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static final int VIEW_TYPE_FILE_OUTGOING = 6;
 	private static final int VIEW_TYPE_SYSTEM_MESSAGE = 7;
 	private static final int VIEW_TYPE_DATE = 8;
+	private static final int VIEW_TYPE_EMPLOYEE_TYPING = 9;
 
 	private List<AdapterItem> messages = new ArrayList<>();
 	@Nullable
@@ -74,6 +77,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				view = LayoutInflater.from(parent.getContext())
 						.inflate(R.layout.i_chat_message_date, parent, false);
 				return new DateHolder(view);
+			case VIEW_TYPE_EMPLOYEE_TYPING:
+				view = LayoutInflater.from(parent.getContext())
+						.inflate(R.layout.i_chat_message_in, parent, false);
+				return new IncomingTypingMessageHolder(view);
 		}
 		return null;
 	}
@@ -107,6 +114,9 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			case VIEW_TYPE_DATE:
 				((DateHolder) holder).bind((DateItem) message);
 				break;
+			case VIEW_TYPE_EMPLOYEE_TYPING:
+				((IncomingTypingMessageHolder) holder).bind((EmployeeTypingItem) message);
+				break;
 		}
 
 		if (onMessageClickListener != null && message.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
@@ -124,42 +134,45 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	public int getItemViewType(int position) {
 		AdapterItem item = messages.get(position);
 
-		if (item.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
-			ChatItem message = (ChatItem) item;
+		switch (item.getAdapterItemType()) {
+			case CHAT_MESSAGE:
+				ChatItem message = (ChatItem) item;
 
-			if (!TextUtils.isEmpty(message.fileUrl)) {
-				// todo: will be something better in future
-				boolean isImgFile = message.fileUrl.contains("jpg") ||
-						message.fileUrl.contains("jpeg") ||
-						message.fileUrl.contains("png") ||
-						message.fileUrl.contains("bmp");
+				if (!TextUtils.isEmpty(message.fileUrl)) {
+					// todo: will be something better in future
+					boolean isImgFile = message.fileUrl.contains("jpg") ||
+							message.fileUrl.contains("jpeg") ||
+							message.fileUrl.contains("png") ||
+							message.fileUrl.contains("bmp");
 
-				if (isImgFile) {
-					if (message.isIncoming) {
-						return VIEW_TYPE_IMAGE_INCOMING;
+					if (isImgFile) {
+						if (message.isIncoming) {
+							return VIEW_TYPE_IMAGE_INCOMING;
+						} else {
+							return VIEW_TYPE_IMAGE_OUTGOING;
+						}
 					} else {
-						return VIEW_TYPE_IMAGE_OUTGOING;
+						if (message.isIncoming) {
+							return VIEW_TYPE_FILE_INCOMING;
+						} else {
+							return VIEW_TYPE_FILE_OUTGOING;
+						}
 					}
 				} else {
+					if (message.isSystem) {
+						return VIEW_TYPE_SYSTEM_MESSAGE;
+					}
+
 					if (message.isIncoming) {
-						return VIEW_TYPE_FILE_INCOMING;
+						return VIEW_TYPE_MESSAGE_INCOMING;
 					} else {
-						return VIEW_TYPE_FILE_OUTGOING;
+						return VIEW_TYPE_MESSAGE_OUTGOING;
 					}
 				}
-			} else {
-				if (message.isSystem) {
-					return VIEW_TYPE_SYSTEM_MESSAGE;
-				}
-
-				if (message.isIncoming) {
-					return VIEW_TYPE_MESSAGE_INCOMING;
-				} else {
-					return VIEW_TYPE_MESSAGE_OUTGOING;
-				}
-			}
-		} else if (item.getAdapterItemType() == ItemType.DATE) {
-			return VIEW_TYPE_DATE;
+			case DATE:
+				return VIEW_TYPE_DATE;
+			case EMPLOYEE_TYPING:
+				return VIEW_TYPE_EMPLOYEE_TYPING;
 		}
 
 		return -1;
@@ -221,6 +234,66 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			nameView.setText(opName);
 
 			timeView.setText(DateUtils.dateToTime(message.createdAt));
+		}
+	}
+
+	private static class IncomingTypingMessageHolder extends RecyclerView.ViewHolder {
+		TextView messageView;
+		ImageView avatarView;
+		TextView nameView;
+		TextView timeView;
+		Handler handler;
+
+		IncomingTypingMessageHolder(View itemView) {
+			super(itemView);
+
+			nameView = itemView.findViewById(R.id.nameView);
+			messageView = itemView.findViewById(R.id.messageView);
+			avatarView = itemView.findViewById(R.id.avatarView);
+			timeView = itemView.findViewById(R.id.timeView);
+		}
+
+		void bind(EmployeeTypingItem message) {
+			handler = new Handler(Looper.getMainLooper());
+			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
+			String avatarUrl = ((Employee) message.creator).avatarUrl;
+			String opName = ((Employee) message.creator).name;
+
+			if (!TextUtils.isEmpty(avatarUrl)) {
+				Glide.with(avatarView.getContext())
+						.load(avatarUrl)
+						.placeholder(R.drawable.logo)
+						.error(R.drawable.logo)
+						.centerCrop()
+						.dontAnimate()
+						.apply(RequestOptions.circleCropTransform())
+						.into(avatarView);
+			} else {
+				avatarView.setImageResource(R.drawable.logo);
+			}
+
+			nameView.setText(opName);
+
+			timeView.setVisibility(View.GONE);
+
+			typingAnimation(messageView, "Печатает.....", "Печатает".length(), "Печатает".length());
+		}
+
+		private void typingAnimation(TextView view, String text, int initialLength, int length) {
+			if (handler == null) {
+				return;
+			}
+			long delay = 250L;
+			view.setText(text.substring(0, length));
+			if (length < text.length()) {
+				handler.postDelayed(() -> typingAnimation(view, text, initialLength, length + 1), delay);
+			} else {
+				if (view.isAttachedToWindow()) {
+					handler.postDelayed(() -> typingAnimation(view, text, initialLength, initialLength), delay);
+				} else {
+					handler = null;
+				}
+			}
 		}
 	}
 

@@ -8,6 +8,7 @@ import android.util.Log;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -38,6 +39,7 @@ public final class ChatViewModel extends ViewModel {
 	private static final String TAG = "MainViewModel";
 
 	private final CompositeDisposable disposables = new CompositeDisposable();
+	private Disposable employeeTypingDisposable = null;
 	private final SharedPreferences sp;
 
 	final MutableLiveData<NetworkManager.ConnectionState> connectionStateLiveData = new MutableLiveData<>();
@@ -113,7 +115,24 @@ public final class ChatViewModel extends ViewModel {
 		disposables.add(messagesHandler.employeeTyping()
 				.observeOn(Schedulers.io())
 				.subscribe(event -> {
-					// todo: UI indicator
+					if (dialogStateUpdateLiveData.getValue() == null) {
+						// We need Employee info
+						return;
+					}
+					if (ChatState.instance.getMessage(ChatMessage.ID_TYPING) == null) {
+						ChatMessage typingMessage = ChatState.instance.createTypingMessage(dialogStateUpdateLiveData.getValue().employee);
+					}
+					if (employeeTypingDisposable != null && !employeeTypingDisposable.isDisposed()) {
+						employeeTypingDisposable.dispose();
+					}
+
+					employeeTypingDisposable = Completable.timer(3, TimeUnit.SECONDS)
+							.observeOn(Schedulers.io())
+							.subscribe(() -> {
+								ChatState.instance.removeMessage(ChatMessage.ID_TYPING, true);
+							}, thr -> {
+								Log.e(TAG, "employeeTyping disposable", thr);
+							});
 				}, thr -> {
 					Log.e(TAG, "employeeTyping", thr);
 				}));
@@ -159,7 +178,7 @@ public final class ChatViewModel extends ViewModel {
 				.observeOn(Schedulers.io())
 				.subscribe(resp -> {
 					// remove message with local id
-					ChatState.instance.removeMessage(chatMessage.id);
+					ChatState.instance.removeMessage(chatMessage.id, false);
 
 					chatMessage.id = resp.sentMessage.id;
 					chatMessage.setSentState(MessageSentState.SENT);
@@ -245,7 +264,7 @@ public final class ChatViewModel extends ViewModel {
 				.flatMap(messagesHandler::sendFileMessage)
 				.subscribe(resp -> {
 							// remove message with local id
-							ChatState.instance.removeMessage(chatMessage.id);
+							ChatState.instance.removeMessage(chatMessage.id, false);
 
 							chatMessage.id = resp.sentMessage.id;
 							chatMessage.setSentState(MessageSentState.SENT);

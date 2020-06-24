@@ -9,6 +9,9 @@ import ru.livetex.sdk.entity.Creator;
 import ru.livetex.sdk.entity.User;
 
 public final class ChatMessage implements Comparable<ChatMessage> {
+	// Special case for displaying "employee typing" message
+	public static final String ID_TYPING = "typing";
+
 	@NonNull
 	public String id;
 	@NonNull
@@ -78,6 +81,13 @@ public final class ChatMessage implements Comparable<ChatMessage> {
 
 	@Override
 	public int compareTo(ChatMessage o) {
+		// "employee typing" message is always the last message
+		if (this.id.equals(ID_TYPING)) {
+			return 1;
+		}
+		if (o.id.equals(ID_TYPING)) {
+			return -1;
+		}
 		return this.createdAt.compareTo(o.createdAt);
 	}
 }
