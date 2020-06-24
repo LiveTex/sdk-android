@@ -35,7 +35,7 @@ public final class ApiManager {
 					.build();
 
 			Request request = new Request.Builder()
-					.url(NetworkManager.getInstance().getApiHost() + "upload")
+					.url(NetworkManager.getInstance().getUploadEndpoint())
 					.post(requestBody)
 					.build();
 

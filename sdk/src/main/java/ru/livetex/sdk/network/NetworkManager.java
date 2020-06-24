@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
+import com.google.gson.Gson;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.reactivex.Observable;
@@ -18,13 +20,12 @@ import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.WebSocket;
 import ru.livetex.sdk.LiveTex;
+import ru.livetex.sdk.entity.AuthResponseEntity;
 import ru.livetex.sdk.network.websocket.LiveTexWebsocketListener;
 
 public final class NetworkManager {
 	private static final String TAG = "NetworkManager";
 	private static NetworkManager instance;
-
-	private String host;
 
 	private final OkHttpManager okHttpManager = new OkHttpManager();
 	private final ApiManager apiManager = new ApiManager(okHttpManager);
@@ -38,24 +39,32 @@ public final class NetworkManager {
 		CONNECTED
 	}
 
-	@Nullable
-	private WebSocket webSocket = null;
-	private boolean needReconnect = true;
-	private BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
+	// Endpoint for auth request.
+	private String authHost;
+	// Endpoint for web socket connection. Can be changed by auth response.
+	private String wsEndpoint;
+	// Endpoint for file upload. Can be changed by auth response.
+	private String uploadEndpoint;
 	@NonNull
 	private final String touchpoint;
 	@Nullable
-	private String deviceId;
+	private final String deviceId;
 	@Nullable
-	private String deviceType;
+	private final String deviceType;
 	@Nullable
 	private String lastClientId = null;
+	@Nullable
+	private WebSocket webSocket = null;
+	private boolean needReconnect = true;
+	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
 
 	private NetworkManager(@NonNull String host,
 						   @NonNull String touchpoint,
 						   @Nullable String deviceId,
 						   @Nullable String deviceType) {
-		this.host = host;
+		this.authHost = "http://" + host + "v1/";
+		this.wsEndpoint = "wss://" + host + "v1/ws/{clientId}";
+		this.uploadEndpoint = host + "upload";
 		this.touchpoint = touchpoint;
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;
@@ -90,11 +99,11 @@ public final class NetworkManager {
 		});
 	}
 
-	String getApiHost() {
-		return "http://" + host + "v1/"; // todo: https
+	public String getUploadEndpoint() {
+		return uploadEndpoint;
 	}
 
-	private void connectWebSocket() throws IOException {
+	private void connectWebSocket() {
 		if (webSocket != null) {
 			Log.e(TAG, "Connect: websocket is active!");
 			return;
@@ -105,7 +114,7 @@ public final class NetworkManager {
 		}
 		connectionStateSubject.onNext(ConnectionState.CONNECTING);
 
-		String url = getWebsocketEndpoint().replace("{clientId}", lastClientId);
+		String url = wsEndpoint.replace("{clientId}", lastClientId);
 
 		Request request = new Request.Builder()
 				.url(url)
@@ -117,7 +126,7 @@ public final class NetworkManager {
 						@Nullable String clientId,
 						@Nullable String deviceId,
 						@Nullable String deviceType) throws IOException {
-		HttpUrl.Builder urlBuilder = HttpUrl.parse(getApiHost() + "auth")
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
 				.newBuilder()
 				.addQueryParameter("touchPoint", touchpoint);
 
@@ -136,8 +145,17 @@ public final class NetworkManager {
 				.url(url)
 				.get();
 
-		// in future here we can receive new host for weboscket connection, so HOST variable can be updated
-		return okHttpManager.requestString(rb.build());
+		String response = okHttpManager.requestString(rb.build());
+		AuthResponseEntity responseEntity = new Gson().fromJson(response, AuthResponseEntity.class);
+		if (responseEntity.endpoints != null) {
+			if (!TextUtils.isEmpty(responseEntity.endpoints.ws)) {
+				wsEndpoint = responseEntity.endpoints.ws;
+			}
+			if (!TextUtils.isEmpty(responseEntity.endpoints.upload)) {
+				uploadEndpoint = responseEntity.endpoints.upload;
+			}
+		}
+		return responseEntity.userToken;
 	}
 
 	public void forceDisconnect() {
@@ -198,9 +216,5 @@ public final class NetworkManager {
 						}
 					}
 				}, thr -> Log.e(TAG, "failEvent", thr)));
-	}
-
-	private String getWebsocketEndpoint() {
-		return "ws://" + host + "v1/ws/{clientId}"; // todo: wss
 	}
 }

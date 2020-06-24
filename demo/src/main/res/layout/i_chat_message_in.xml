@@ -4,10 +4,10 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	android:paddingBottom="10dp"
+	android:layout_marginStart="18dp"
+	android:layout_marginEnd="18dp"
 	android:paddingTop="10dp"
-	android:paddingStart="18dp"
-	android:paddingEnd="18dp">
+	android:paddingBottom="10dp">
 
 	<TextView
 		android:id="@+id/nameView"
@@ -35,27 +35,34 @@
 		android:layout_marginStart="6dp"
 		android:layout_marginTop="4dp"
 		android:background="@drawable/bg_gray_rounded"
-		android:maxWidth="270dp"
 		android:minWidth="70dp"
 		android:paddingStart="14dp"
 		android:paddingTop="8dp"
 		android:paddingEnd="14dp"
 		android:paddingBottom="8dp"
-		android:textSize="16sp"
 		android:textColor="#000000"
 		android:textIsSelectable="true"
-		app:layout_constraintStart_toEndOf="@id/avatarView"
+		android:textSize="16sp"
+		app:layout_constraintEnd_toStartOf="@+id/timeView"
+		app:layout_constraintHorizontal_bias="0.0"
+		app:layout_constraintHorizontal_chainStyle="packed"
+		app:layout_constraintStart_toEndOf="@+id/avatarView"
 		app:layout_constraintTop_toBottomOf="@id/nameView"
-		tools:text="test" />
+		app:layout_constraintWidth_default="wrap"
+		tools:text="teaвфывфывфывфывфыввфывфывфыв" />
 
 	<TextView
 		android:id="@+id/timeView"
-		android:layout_width="wrap_content"
+		android:layout_width="0dp"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="8dp"
 		android:textColor="@android:color/black"
 		android:textSize="12sp"
 		app:layout_constraintBottom_toBottomOf="@id/messageView"
-		app:layout_constraintStart_toEndOf="@id/messageView"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintHorizontal_bias="0.0"
+		app:layout_constraintHorizontal_chainStyle="packed"
+		app:layout_constraintStart_toEndOf="@+id/messageView"
+		app:layout_constraintWidth_default="wrap"
 		tools:text="12:34" />
 </androidx.constraintlayout.widget.ConstraintLayout>
