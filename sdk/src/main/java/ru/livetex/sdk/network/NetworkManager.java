@@ -52,7 +52,7 @@ public final class NetworkManager {
 	@Nullable
 	private final String deviceType;
 	@Nullable
-	private String lastClientId = null;
+	private String lastUserToken = null;
 	@Nullable
 	private WebSocket webSocket = null;
 	private boolean needReconnect = true;
@@ -62,9 +62,9 @@ public final class NetworkManager {
 						   @NonNull String touchpoint,
 						   @Nullable String deviceId,
 						   @Nullable String deviceType) {
-		this.authHost = "http://" + host + "v1/";
-		this.wsEndpoint = "wss://" + host + "v1/ws/{clientId}";
-		this.uploadEndpoint = host + "upload";
+		this.authHost = "https://" + host + "v1/";
+		this.wsEndpoint = "wss://" + host + "v1/ws/{userToken}";
+		this.uploadEndpoint = "https://" + host + "upload";
 		this.touchpoint = touchpoint;
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;
@@ -91,11 +91,11 @@ public final class NetworkManager {
 		return connectionStateSubject;
 	}
 
-	public Single<String> connect(@Nullable String clientId) {
+	public Single<String> connect(@Nullable String userToken) {
 		return Single.fromCallable(() -> {
-			lastClientId = auth(touchpoint, clientId, deviceId, deviceType);
+			lastUserToken = auth(touchpoint, userToken, deviceId, deviceType);
 			connectWebSocket();
-			return lastClientId;
+			return lastUserToken;
 		});
 	}
 
@@ -108,13 +108,13 @@ public final class NetworkManager {
 			Log.e(TAG, "Connect: websocket is active!");
 			return;
 		}
-		if (lastClientId == null) {
+		if (lastUserToken == null) {
 			Log.e(TAG, "Connect: client id is null");
 			return;
 		}
 		connectionStateSubject.onNext(ConnectionState.CONNECTING);
 
-		String url = wsEndpoint.replace("{clientId}", lastClientId);
+		String url = wsEndpoint.replace("{userToken}", lastUserToken);
 
 		Request request = new Request.Builder()
 				.url(url)
@@ -123,15 +123,15 @@ public final class NetworkManager {
 	}
 
 	private String auth(@NonNull String touchpoint,
-						@Nullable String clientId,
+						@Nullable String userToken,
 						@Nullable String deviceId,
 						@Nullable String deviceType) throws IOException {
 		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
 				.newBuilder()
 				.addQueryParameter("touchPoint", touchpoint);
 
-		if (!TextUtils.isEmpty(clientId)) {
-			urlBuilder.addQueryParameter("clientId", clientId);
+		if (!TextUtils.isEmpty(userToken)) {
+			urlBuilder.addQueryParameter("userToken", userToken);
 		}
 		if (!TextUtils.isEmpty(deviceId)) {
 			urlBuilder.addQueryParameter("deviceId", deviceId);

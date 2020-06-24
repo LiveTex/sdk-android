@@ -268,13 +268,13 @@ public final class ChatViewModel extends ViewModel {
 	}
 
 	private void connect() {
-		String clientId = sp.getString(Const.KEY_CLIENTID, null);
+		String userToken = sp.getString(Const.KEY_USER_TOKEN, null);
 
-		disposables.add(networkManager.connect(clientId)
+		disposables.add(networkManager.connect(userToken)
 				.subscribeOn(Schedulers.io())
 				.observeOn(Schedulers.io())
-				.subscribe(clientIdReceived -> {
-					sp.edit().putString(Const.KEY_CLIENTID, clientIdReceived).apply();
+				.subscribe(userIdReceived -> {
+					sp.edit().putString(Const.KEY_USER_TOKEN, userIdReceived).apply();
 				}, e -> {
 					Log.e(TAG, "connect", e);
 					errorLiveData.postValue("Ошибка соединения " + e.getMessage());

@@ -30,7 +30,7 @@
 
 	<TextView
 		android:id="@+id/messageView"
-		android:layout_width="0dp"
+		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="6dp"
 		android:layout_marginTop="4dp"
@@ -43,26 +43,26 @@
 		android:textColor="#000000"
 		android:textIsSelectable="true"
 		android:textSize="16sp"
+		app:layout_constrainedWidth="true"
 		app:layout_constraintEnd_toStartOf="@+id/timeView"
 		app:layout_constraintHorizontal_bias="0.0"
 		app:layout_constraintHorizontal_chainStyle="packed"
 		app:layout_constraintStart_toEndOf="@+id/avatarView"
 		app:layout_constraintTop_toBottomOf="@id/nameView"
-		app:layout_constraintWidth_default="wrap"
 		tools:text="teaвфывфывфывфывфыввфывфывфыв" />
 
 	<TextView
 		android:id="@+id/timeView"
-		android:layout_width="0dp"
+		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="8dp"
 		android:textColor="@android:color/black"
 		android:textSize="12sp"
+		app:layout_constrainedWidth="true"
 		app:layout_constraintBottom_toBottomOf="@id/messageView"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintHorizontal_bias="0.0"
 		app:layout_constraintHorizontal_chainStyle="packed"
 		app:layout_constraintStart_toEndOf="@+id/messageView"
-		app:layout_constraintWidth_default="wrap"
 		tools:text="12:34" />
 </androidx.constraintlayout.widget.ConstraintLayout>
