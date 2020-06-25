@@ -3,6 +3,7 @@ package ru.livetex.sdk.logic;
 import android.util.Log;
 import android.util.Pair;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -92,6 +93,7 @@ public class LiveTexMessagesHandler {
 		} else if (entity instanceof AttributesRequest) {
 			attributesRequestSubject.onNext((AttributesRequest) entity);
 		} else if (entity instanceof DepartmentRequestEntity) {
+			Collections.sort(((DepartmentRequestEntity) entity).departments);
 			departmentRequestSubject.onNext((DepartmentRequestEntity) entity);
 		}
 
@@ -169,8 +171,8 @@ public class LiveTexMessagesHandler {
 		return sendAndSubscribe(json, event.correlationId);
 	}
 
-	public Single<ResponseEntity> sendDepartmentSelectionEvent(String depId) {
-		Department event = new Department(depId);
+	public Single<ResponseEntity> sendDepartmentSelectionEvent(String departmentId) {
+		Department event = new Department(departmentId);
 		String json = EntityMapper.gson.toJson(event);
 		return sendAndSubscribe(json, event.correlationId);
 	}

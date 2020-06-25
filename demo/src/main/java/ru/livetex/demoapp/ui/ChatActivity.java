@@ -19,7 +19,6 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -51,9 +50,9 @@ import ru.livetex.demoapp.ui.adapter.AdapterItem;
 import ru.livetex.demoapp.ui.adapter.ChatItem;
 import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
 import ru.livetex.demoapp.ui.adapter.DateItem;
+import ru.livetex.demoapp.ui.adapter.EmployeeTypingItem;
 import ru.livetex.demoapp.ui.adapter.ItemType;
 import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
-import ru.livetex.demoapp.ui.adapter.EmployeeTypingItem;
 import ru.livetex.demoapp.ui.image.ImageActivity;
 import ru.livetex.demoapp.utils.DateUtils;
 import ru.livetex.demoapp.utils.FileUtils;
@@ -281,7 +280,6 @@ public class ChatActivity extends AppCompatActivity {
 				items.add(new EmployeeTypingItem(chatMessage));
 			}
 		}
-		Collections.sort(items);
 
 		ChatMessageDiffUtil diffUtil =
 				new ChatMessageDiffUtil(adapter.getData(), items);
@@ -442,7 +440,7 @@ public class ChatActivity extends AppCompatActivity {
 
 		for (Department department : departments) {
 			MaterialButton view = (MaterialButton) View.inflate(this, R.layout.l_department_button, null);
-			view.setText(department.id);
+			view.setText(department.name);
 			view.setOnClickListener(v -> viewModel.selectDepartment(department));
 
 			departmentsButtonContainerView.addView(view);

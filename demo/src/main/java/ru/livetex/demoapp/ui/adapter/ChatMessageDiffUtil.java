@@ -31,13 +31,18 @@ public final class ChatMessageDiffUtil extends DiffUtil.Callback {
 		AdapterItem newProduct = newList.get(newItemPosition);
 
 		if (oldProduct.getAdapterItemType() == newProduct.getAdapterItemType()) {
-			if (oldProduct.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
-				return ((ChatItem)oldProduct).id.equals(((ChatItem)newProduct).id);
-			} else if (oldProduct.getAdapterItemType() == ItemType.DATE) {
-				return ((DateItem)oldProduct).text.equals(((DateItem)newProduct).text);
+			switch (oldProduct.getAdapterItemType()) {
+				case CHAT_MESSAGE:
+					return ((ChatItem) oldProduct).id.equals(((ChatItem) newProduct).id);
+				case DATE:
+					return ((DateItem) oldProduct).text.equals(((DateItem) newProduct).text);
+				case EMPLOYEE_TYPING:
+					// shouldn't happen
+					return true;
 			}
-		} else
+		} else {
 			return false;
+		}
 
 		return oldProduct == newProduct;
 	}

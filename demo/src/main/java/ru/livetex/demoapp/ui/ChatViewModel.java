@@ -245,6 +245,13 @@ public final class ChatViewModel extends ViewModel {
 				messages.add(chatMessage);
 			}
 		}
+
+		// Remove "Employee Typing" indicator
+		if (employeeTypingDisposable != null && !employeeTypingDisposable.isDisposed()) {
+			employeeTypingDisposable.dispose();
+			ChatState.instance.removeMessage(ChatMessage.ID_TYPING, false);
+		}
+
 		ChatState.instance.addMessages(messages);
 	}
 

@@ -37,21 +37,27 @@ public final class ChatState {
 		for (ChatMessage message : newMessages) {
 			messages.put(message.id, message);
 		}
+		notifyObservers();
+	}
+
+	private void notifyObservers() {
 		ArrayList<ChatMessage> result = new ArrayList<>(messages.values());
-		// Must do sorting because "newMessages" can be previous messages, received from history loading
+		// Must do sorting because
+		// 1) "newMessages" can be previous messages, received from history loading
+		// 2) messages isn't sorted map and messages.values() isn't sorted result too
 		Collections.sort(result);
 		messagesSubject.onNext(result);
 	}
 
 	public synchronized void addOrUpdateMessage(ChatMessage message) {
 		messages.put(message.id, message);
-		messagesSubject.onNext(new ArrayList<>(messages.values()));
+		notifyObservers();
 	}
 
 	public synchronized void removeMessage(String id, boolean notify) {
 		messages.remove(id);
 		if (notify) {
-			messagesSubject.onNext(new ArrayList<>(messages.values()));
+			notifyObservers();
 		}
 	}
 

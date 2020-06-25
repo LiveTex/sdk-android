@@ -35,7 +35,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static final int VIEW_TYPE_DATE = 8;
 	private static final int VIEW_TYPE_EMPLOYEE_TYPING = 9;
 
-	private List<AdapterItem> messages = new ArrayList<>();
+	private List<AdapterItem> items = new ArrayList<>();
 	@Nullable
 	private Consumer<ChatItem> onMessageClickListener = null;
 
@@ -87,7 +87,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 	@Override
 	public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-		final AdapterItem message = messages.get(position);
+		final AdapterItem message = items.get(position);
 
 		switch (holder.getItemViewType()) {
 			case VIEW_TYPE_MESSAGE_INCOMING:
@@ -132,7 +132,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 	@Override
 	public int getItemViewType(int position) {
-		AdapterItem item = messages.get(position);
+		AdapterItem item = items.get(position);
 
 		switch (item.getAdapterItemType()) {
 			case CHAT_MESSAGE:
@@ -180,16 +180,16 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 	@Override
 	public int getItemCount() {
-		return messages.size();
+		return items.size();
 	}
 
 	public List<AdapterItem> getData() {
-		return messages;
+		return items;
 	}
 
 	public void setData(List<AdapterItem> chatMessages) {
-		this.messages.clear();
-		this.messages.addAll(chatMessages);
+		this.items.clear();
+		this.items.addAll(chatMessages);
 	}
 
 	public void setOnMessageClickListener(@NonNull Consumer<ChatItem> onMessageClickListener) {
