@@ -367,6 +367,7 @@ public class ChatActivity extends AppCompatActivity {
 				return;
 			}
 
+			InputUtils.hideKeyboard(this);
 			viewModel.sendAttributes(name, phone, email);
 		});
 	}
@@ -422,11 +423,13 @@ public class ChatActivity extends AppCompatActivity {
 				break;
 			case ATTRIBUTES:
 				InputUtils.hideKeyboard(this);
+				inputView.clearFocus();
 				inputContainerView.setVisibility(View.GONE);
 				attributesContainerView.setVisibility(View.VISIBLE);
 				break;
 			case DEPARTMENTS:
 				InputUtils.hideKeyboard(this);
+				inputView.clearFocus();
 				inputContainerView.setVisibility(View.GONE);
 				attributesContainerView.setVisibility(View.GONE);
 				departmentsContainerView.setVisibility(View.VISIBLE);

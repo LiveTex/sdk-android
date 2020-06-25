@@ -90,6 +90,11 @@
 					android:padding="24dp"
 					android:singleLine="true" />
 
+				<View
+					android:layout_width="match_parent"
+					android:layout_height="1dp"
+					android:background="#E5E5E5" />
+
 				<EditText
 					android:id="@+id/attributesPhoneView"
 					android:layout_width="match_parent"
@@ -100,6 +105,11 @@
 					android:maxLength="100"
 					android:padding="24dp"
 					android:singleLine="true" />
+
+				<View
+					android:layout_width="match_parent"
+					android:layout_height="1dp"
+					android:background="#E5E5E5" />
 
 				<EditText
 					android:id="@+id/attributesEmailView"
@@ -245,6 +255,7 @@
 				android:background="@drawable/bg_input_field"
 				android:hint="Введите сообщение"
 				android:imeOptions="actionSend"
+				android:focusedByDefault="false"
 				android:importantForAutofill="no"
 				android:inputType="textCapSentences"
 				android:maxLength="4000"
