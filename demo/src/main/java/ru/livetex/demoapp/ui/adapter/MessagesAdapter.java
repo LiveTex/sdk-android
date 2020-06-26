@@ -218,18 +218,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			String avatarUrl = ((Employee) message.creator).avatarUrl;
 			String opName = ((Employee) message.creator).name;
 
-			if (!TextUtils.isEmpty(avatarUrl)) {
-				Glide.with(avatarView.getContext())
-						.load(avatarUrl)
-						.placeholder(R.drawable.logo)
-						.error(R.drawable.logo)
-						.centerCrop()
-						.dontAnimate()
-						.apply(RequestOptions.circleCropTransform())
-						.into(avatarView);
-			} else {
-				avatarView.setImageResource(R.drawable.logo);
-			}
+			loadAvatar(avatarView, avatarUrl);
 
 			nameView.setText(opName);
 
@@ -259,18 +248,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			String avatarUrl = ((Employee) message.creator).avatarUrl;
 			String opName = ((Employee) message.creator).name;
 
-			if (!TextUtils.isEmpty(avatarUrl)) {
-				Glide.with(avatarView.getContext())
-						.load(avatarUrl)
-						.placeholder(R.drawable.logo)
-						.error(R.drawable.logo)
-						.centerCrop()
-						.dontAnimate()
-						.apply(RequestOptions.circleCropTransform())
-						.into(avatarView);
-			} else {
-				avatarView.setImageResource(R.drawable.logo);
-			}
+			loadAvatar(avatarView, avatarUrl);
 
 			nameView.setText(opName);
 
@@ -337,18 +315,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			String avatarUrl = ((Employee) message.creator).avatarUrl;
 			String opName = ((Employee) message.creator).name;
 
-			if (!TextUtils.isEmpty(avatarUrl)) {
-				Glide.with(avatarView.getContext())
-						.load(avatarUrl)
-						.placeholder(R.drawable.logo)
-						.error(R.drawable.logo)
-						.centerCrop()
-						.dontAnimate()
-						.apply(RequestOptions.circleCropTransform())
-						.into(avatarView);
-			} else {
-				avatarView.setImageResource(R.drawable.logo);
-			}
+			loadAvatar(avatarView, avatarUrl);
 
 			nameView.setText(opName);
 
@@ -433,18 +400,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			String avatarUrl = ((Employee) message.creator).avatarUrl;
 			String opName = ((Employee) message.creator).name;
 
-			if (!TextUtils.isEmpty(avatarUrl)) {
-				Glide.with(avatarView.getContext())
-						.load(avatarUrl)
-						.placeholder(R.drawable.logo)
-						.error(R.drawable.logo)
-						.centerCrop()
-						.dontAnimate()
-						.apply(RequestOptions.circleCropTransform())
-						.into(avatarView);
-			} else {
-				avatarView.setImageResource(R.drawable.logo);
-			}
+			loadAvatar(avatarView, avatarUrl);
 
 			nameView.setText(opName);
 
@@ -482,5 +438,20 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				.dontAnimate()
 				.transform(new RoundedCorners(cornersRadius))
 				.into(imageView);
+	}
+
+	private static void loadAvatar(ImageView avatarView, String avatarUrl) {
+		if (!TextUtils.isEmpty(avatarUrl)) {
+			Glide.with(avatarView.getContext())
+					.load(avatarUrl)
+					.placeholder(R.drawable.avatar)
+					.error(R.drawable.avatar)
+					.centerCrop()
+					.dontAnimate()
+					.apply(RequestOptions.circleCropTransform())
+					.into(avatarView);
+		} else {
+			avatarView.setImageResource(R.drawable.avatar);
+		}
 	}
 }
