@@ -64,7 +64,7 @@ public final class NetworkManager {
 						   @Nullable String deviceType) {
 		this.authHost = "https://" + host + "v1/";
 		this.wsEndpoint = "wss://" + host + "v1/ws/{userToken}";
-		this.uploadEndpoint = "https://" + host + "upload";
+		this.uploadEndpoint = "https://" + host + "v1/upload";
 		this.touchpoint = touchpoint;
 		this.deviceId = deviceId;
 		this.deviceType = deviceType;

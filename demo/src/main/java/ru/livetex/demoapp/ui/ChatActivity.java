@@ -190,6 +190,8 @@ public class ChatActivity extends AppCompatActivity {
 						return;
 					}
 					onFileSelected(resultUri);
+				} else {
+					Toast.makeText(this, "Ошибка при попытке вызвать редактор фото", Toast.LENGTH_SHORT).show();
 				}
 				break;
 			}

@@ -29,7 +29,8 @@ public final class ApiManager {
 
 	public Single<FileUploadedResponse> uploadFile(File file) {
 		return Single.create(emitter -> {
-			RequestBody requestBody = new MultipartBody.Builder().setType(MultipartBody.FORM)
+			RequestBody requestBody = new MultipartBody.Builder()
+					.setType(MultipartBody.FORM)
 					.addFormDataPart("fileUpload", file.getName(),
 							RequestBody.create(MediaType.parse("text/plain"), file))
 					.build();
