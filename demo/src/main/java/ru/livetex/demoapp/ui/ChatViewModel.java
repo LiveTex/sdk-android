@@ -36,7 +36,7 @@ import ru.livetex.sdk.logic.LiveTexMessagesHandler;
 import ru.livetex.sdk.network.NetworkManager;
 
 public final class ChatViewModel extends ViewModel {
-	private static final String TAG = "MainViewModel";
+	private static final String TAG = "ChatViewModel";
 
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private Disposable employeeTypingDisposable = null;
@@ -64,7 +64,7 @@ public final class ChatViewModel extends ViewModel {
 	protected void onCleared() {
 		super.onCleared();
 		disposables.clear();
-		NetworkManager.getInstance().forceDisconnect();
+		networkManager.forceDisconnect();
 	}
 
 	/**

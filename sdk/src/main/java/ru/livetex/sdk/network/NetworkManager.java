@@ -1,10 +1,10 @@
 package ru.livetex.sdk.network;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.IOException;
-import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
@@ -57,6 +57,7 @@ public final class NetworkManager {
 	private WebSocket webSocket = null;
 	private boolean needReconnect = true;
 	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
+	private final NetworkStateObserver networkStateObserver = new NetworkStateObserver();
 
 	private NetworkManager(@NonNull String host,
 						   @NonNull String touchpoint,
@@ -70,6 +71,17 @@ public final class NetworkManager {
 		this.deviceType = deviceType;
 		this.websocketListener = LiveTex.getInstance().getWebsocketListener();
 		subscribeToWebsocket();
+
+		disposables.add(networkStateObserver.status()
+				.filter(status -> status == NetworkStateObserver.InternetConnectionStatus.CONNECTED)
+				.observeOn(Schedulers.io())
+				.subscribe(status -> {
+					if (needReconnect && connectionStateSubject.getValue() == ConnectionState.DISCONNECTED) {
+						connectWebSocket();
+					}
+				}, thr -> {
+					Log.e(TAG, "networkStateObserver", thr);
+				}));
 	}
 
 	public static void init(@NonNull String host,
@@ -91,6 +103,14 @@ public final class NetworkManager {
 		return connectionStateSubject;
 	}
 
+	public void startObserveNetworkState(Context context) {
+		networkStateObserver.startObserve(context);
+	}
+
+	public void stopObserveNetworkState(Context context) {
+		networkStateObserver.stopObserve(context);
+	}
+
 	public Single<String> connect(@Nullable String userToken) {
 		return Single.fromCallable(() -> {
 			lastUserToken = auth(touchpoint, userToken, deviceId, deviceType);
@@ -99,8 +119,24 @@ public final class NetworkManager {
 		});
 	}
 
+	@Nullable
+	public WebSocket getWebSocket() {
+		return webSocket;
+	}
+
 	public String getUploadEndpoint() {
 		return uploadEndpoint;
+	}
+
+	public void forceDisconnect() {
+		needReconnect = false;
+		if (webSocket != null) {
+			Log.i(TAG, "Disconnecting websocket...");
+			webSocket.close(1000, "disconnect requested");
+			connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+		} else {
+			Log.i(TAG, "Websocket disconnect requested but websocket is null");
+		}
 	}
 
 	private void connectWebSocket() {
@@ -109,7 +145,7 @@ public final class NetworkManager {
 			return;
 		}
 		if (lastUserToken == null) {
-			Log.e(TAG, "Connect: client id is null");
+			Log.e(TAG, "Connect: client token is null");
 			return;
 		}
 		connectionStateSubject.onNext(ConnectionState.CONNECTING);
@@ -147,31 +183,13 @@ public final class NetworkManager {
 
 		String response = okHttpManager.requestString(rb.build());
 		AuthResponseEntity responseEntity = new Gson().fromJson(response, AuthResponseEntity.class);
-		if (responseEntity.endpoints != null) {
-			if (!TextUtils.isEmpty(responseEntity.endpoints.ws)) {
-				wsEndpoint = responseEntity.endpoints.ws;
-			}
-			if (!TextUtils.isEmpty(responseEntity.endpoints.upload)) {
-				uploadEndpoint = responseEntity.endpoints.upload;
-			}
+		if (!TextUtils.isEmpty(responseEntity.endpoints.ws)) {
+			wsEndpoint = responseEntity.endpoints.ws;
+		}
+		if (!TextUtils.isEmpty(responseEntity.endpoints.upload)) {
+			uploadEndpoint = responseEntity.endpoints.upload;
 		}
 		return responseEntity.userToken;
-	}
-
-	public void forceDisconnect() {
-		needReconnect = false;
-		if (webSocket != null) {
-			Log.i(TAG, "Disconnecting websocket...");
-			webSocket.close(1000, "disconnect requested");
-			connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-		} else {
-			Log.i(TAG, "Websocket disconnect requested but websocket is null");
-		}
-	}
-
-	@Nullable
-	public WebSocket getWebSocket() {
-		return webSocket;
 	}
 
 	private void subscribeToWebsocket() {
@@ -204,15 +222,18 @@ public final class NetworkManager {
 					if (ws == webSocket) {
 						webSocket = null;
 						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						needReconnect = thr instanceof SocketTimeoutException;
+						needReconnect = true;
+						boolean needReconnectNow = networkStateObserver.getStatus() == NetworkStateObserver.InternetConnectionStatus.CONNECTED;
 
-						// can be endless loop, so handle only SocketTimeoutException
-						if (needReconnect) {
+						// Can be endless loop, so handle only SocketTimeoutException
+						if (needReconnectNow) {
 							disposables.add(Single.timer(3, TimeUnit.SECONDS)
 									.observeOn(Schedulers.io())
 									.subscribe(ignore -> {
 										connectWebSocket();
 									}, thr1 -> Log.e(TAG, "reconnect", thr1)));
+						} else {
+							// Reconnect should be done later manually or by network state observer
 						}
 					}
 				}, thr -> Log.e(TAG, "failEvent", thr)));

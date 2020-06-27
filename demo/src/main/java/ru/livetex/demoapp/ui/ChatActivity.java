@@ -130,6 +130,23 @@ public class ChatActivity extends AppCompatActivity {
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		NetworkManager.getInstance().startObserveNetworkState(this);
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		disposables.clear();
+		NetworkManager.getInstance().stopObserveNetworkState(this);
+		if (addFileDialog != null && addFileDialog.isShowing()) {
+			addFileDialog.close();
+			addFileDialog = null;
+		}
+	}
+
+	@Override
 	protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
 
@@ -494,16 +511,6 @@ public class ChatActivity extends AppCompatActivity {
 			return;
 		}
 		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-	}
-
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-		disposables.clear();
-		if (addFileDialog != null && addFileDialog.isShowing()) {
-			addFileDialog.close();
-			addFileDialog = null;
-		}
 	}
 
 	private void updateDialogState(DialogState dialogState) {
