@@ -222,7 +222,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 			nameView.setText(opName);
 
-			timeView.setText(DateUtils.dateToTime(message.createdAt));
+			setState(timeView, message);
 		}
 	}
 
@@ -289,7 +289,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message) {
 			messageView.setText(message.content);
 
-			timeView.setText(DateUtils.dateToTime(message.createdAt));
+			setState(timeView, message);
 		}
 	}
 
@@ -323,7 +323,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
 			messageView.setTextIsSelectable(false);
 
-			timeView.setText(DateUtils.dateToTime(message.createdAt));
+			setState(timeView, message);
 		}
 	}
 
@@ -341,7 +341,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message) {
 			messageView.setText(message.content);
 
-			timeView.setText(DateUtils.dateToTime(message.createdAt));
+			setState(timeView, message);
 
 			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
@@ -404,7 +404,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 			nameView.setText(opName);
 
-			timeView.setText(DateUtils.dateToTime(message.createdAt));
+			setState(timeView, message);
 		}
 	}
 
@@ -422,7 +422,25 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message) {
 			loadImage(message, imageView);
 
-			timeView.setText(DateUtils.dateToTime(message.createdAt));
+			setState(timeView, message);
+		}
+	}
+
+	private static void setState(TextView timeView, ChatItem message) {
+		timeView.setText(DateUtils.dateToTime(message.createdAt));
+
+		// todo: double check should be on read state
+		switch (message.sentState) {
+			case NOT_SENT:
+			case SENDING:
+				timeView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.check, 0, 0, 0);
+				break;
+			case SENT:
+				timeView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.double_check, 0, 0, 0);
+				break;
+			case FAILED:
+				timeView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.alert, 0, 0, 0);
+				break;
 		}
 	}
 
