@@ -1,8 +1,11 @@
 package ru.livetex.demoapp.ui.adapter;
 
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Spannable;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,16 +14,24 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
+import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.target.Target;
+import com.bumptech.glide.request.transition.Transition;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.functions.Consumer;
 import ru.livetex.demoapp.R;
+import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.utils.DateUtils;
 import ru.livetex.sdk.entity.Employee;
 
@@ -212,7 +223,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		}
 
 		void bind(ChatItem message) {
-			messageView.setText(message.content);
+			Spannable text = ru.livetex.demoapp.utils.TextUtils.applyLinks(message.content);
+			messageView.setText(text);
+			messageView.setMovementMethod(LinkMovementMethod.getInstance());
+			handleLinkPreview(messageView, text, message.id);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
 			String avatarUrl = ((Employee) message.creator).avatarUrl;
@@ -287,7 +301,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		}
 
 		void bind(ChatItem message) {
-			messageView.setText(message.content);
+			Spannable text = ru.livetex.demoapp.utils.TextUtils.applyLinks(message.content);
+			messageView.setText(text);
+			messageView.setMovementMethod(LinkMovementMethod.getInstance());
+			handleLinkPreview(messageView, text, message.id);
 
 			setState(timeView, message);
 		}
@@ -470,6 +487,40 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 					.into(avatarView);
 		} else {
 			avatarView.setImageResource(R.drawable.avatar);
+		}
+	}
+
+	private static void handleLinkPreview(TextView messageView, Spannable text, String messageId) {
+		String link = ru.livetex.demoapp.utils.TextUtils.getFirstLink(text);
+		if (link != null && !Objects.equals(ChatState.instance.previewsMap.get(messageId), false)) {
+			int width = messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_link_preview_width);
+			int height = messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_link_preview_height);
+			Glide.with(messageView.getContext())
+					.load(link)
+					.addListener(new RequestListener<Drawable>() {
+						@Override
+						public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+							ChatState.instance.previewsMap.put(messageId, false);
+							return false;
+						}
+
+						@Override
+						public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+							ChatState.instance.previewsMap.put(messageId, true);
+							return false;
+						}
+					})
+					.into(new CustomTarget<Drawable>(width, height) {
+						@Override
+						public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
+							messageView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, resource);
+						}
+
+						@Override
+						public void onLoadCleared(@Nullable Drawable placeholder) {
+
+						}
+					});
 		}
 	}
 }

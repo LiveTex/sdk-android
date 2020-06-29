@@ -185,10 +185,12 @@
 		<ImageView
 			android:id="@+id/addView"
 			android:layout_width="32dp"
-			android:layout_height="32dp"
+			android:layout_height="42dp"
 			android:background="?attr/selectableItemBackgroundBorderless"
 			android:clickable="true"
 			android:focusable="true"
+			android:paddingBottom="5dp"
+			android:paddingTop="5dp"
 			android:src="@drawable/plus"
 			app:layout_constraintBottom_toBottomOf="@id/inputContainerView"
 			app:layout_constraintStart_toStartOf="parent" />
@@ -277,10 +279,13 @@
 		<ImageView
 			android:id="@+id/sendView"
 			android:layout_width="32dp"
-			android:layout_height="32dp"
+			android:layout_height="42dp"
+			android:paddingBottom="5dp"
+			android:paddingTop="5dp"
 			android:background="?attr/selectableItemBackgroundBorderless"
 			android:clickable="true"
 			android:focusable="true"
+			android:tint="#3E7AD7"
 			android:src="@drawable/send"
 			app:layout_constraintBottom_toBottomOf="@+id/inputContainerView"
 			app:layout_constraintEnd_toEndOf="parent" />

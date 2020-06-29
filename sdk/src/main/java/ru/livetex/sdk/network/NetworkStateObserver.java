@@ -5,6 +5,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.Build;
 
+import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 
@@ -14,13 +15,14 @@ class NetworkStateObserver {
 		DISCONNECTED
 	}
 
-	private BehaviorSubject<InternetConnectionStatus> connectionStatusSubject = BehaviorSubject.createDefault(InternetConnectionStatus.DISCONNECTED);
+	private BehaviorSubject<InternetConnectionStatus> connectionStatusSubject = BehaviorSubject.create();
 	private NetworkChangeBroadcastReceiver networkChangeBroadcastReceiver = null;
 
 	Observable<InternetConnectionStatus> status() {
 		return connectionStatusSubject;
 	}
 
+	@Nullable
 	InternetConnectionStatus getStatus() {
 		return connectionStatusSubject.getValue();
 	}

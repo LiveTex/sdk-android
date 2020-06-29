@@ -3,6 +3,7 @@ package ru.livetex.demoapp.db;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,6 +28,8 @@ public final class ChatState {
 	// Indicates that chat possible has previous messages (GetHistoryRequest can be done on scroll chat to top).
 	// Initially it can be always true and set to false when HistoryEntity (related to GetHistoryRequest) messages count < offset.
 	public boolean canPreloadChatMessages = true;
+	// For link preview
+	public Map<String, Boolean> previewsMap = new HashMap<>();
 
 	public Observable<List<ChatMessage>> messages() {
 		return messagesSubject
