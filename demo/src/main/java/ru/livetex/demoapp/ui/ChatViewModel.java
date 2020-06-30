@@ -203,7 +203,7 @@ public final class ChatViewModel extends ViewModel {
 	}
 
 	void resendMessage(ChatMessage message) {
-		if (!TextUtils.isEmpty(message.fileUrl)) {
+		if (TextUtils.isEmpty(message.fileUrl)) {
 			sendMessage(message);
 		} else {
 			sendFileMessage(message);
@@ -322,5 +322,10 @@ public final class ChatViewModel extends ViewModel {
 				}, e -> {
 					Log.e(TAG, "loadPreviousMessages", e);
 				});
+		disposables.add(d);
+	}
+
+	public void sendFeedback(boolean isPositive) {
+		messagesHandler.sendRatingEvent(isPositive);
 	}
 }

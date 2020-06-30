@@ -34,14 +34,14 @@ public class EntityMapper {
 	private static final String TAG = "EntityMapper";
 
 	public final static Gson gson = new GsonBuilder()
-			.registerTypeAdapter(BaseEntity.class, new MyTypeModelDeserializer())
+			.registerTypeAdapter(BaseEntity.class, new LivetexTypeModelDeserializer())
 			.create();
 
 	public BaseEntity toEntity(String jsonStr) {
 		return gson.fromJson(jsonStr, BaseEntity.class);
 	}
 
-	static class MyTypeModelDeserializer implements JsonDeserializer<BaseEntity> {
+	static class LivetexTypeModelDeserializer implements JsonDeserializer<BaseEntity> {
 		@Override
 		public BaseEntity deserialize(final JsonElement json, final Type typeOfT, final JsonDeserializationContext context)
 				throws JsonParseException {

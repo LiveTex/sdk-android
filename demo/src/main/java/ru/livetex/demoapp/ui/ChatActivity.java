@@ -85,6 +85,9 @@ public class ChatActivity extends AppCompatActivity {
 	private ViewGroup attributesContainerView;
 	private ViewGroup departmentsContainerView;
 	private ViewGroup departmentsButtonContainerView;
+	private ViewGroup feedbackContainerView;
+	private ImageView feedbackPositiveView;
+	private ImageView feedbackNegativeView;
 	private View attributesSendView;
 	private EditText attributesNameView;
 	private EditText attributesPhoneView;
@@ -107,6 +110,9 @@ public class ChatActivity extends AppCompatActivity {
 		attributesContainerView = findViewById(R.id.attributesContainerView);
 		departmentsContainerView = findViewById(R.id.departmentsContainerView);
 		departmentsButtonContainerView = findViewById(R.id.departmentsButtonContainerView);
+		feedbackContainerView = findViewById(R.id.feedbackContainerView);
+		feedbackPositiveView = findViewById(R.id.feedbackPositiveView);
+		feedbackNegativeView = findViewById(R.id.feedbackNegativeView);
 		attributesSendView = findViewById(R.id.attributesSendView);
 		attributesNameView = findViewById(R.id.attributesNameView);
 		attributesPhoneView = findViewById(R.id.attributesPhoneView);
@@ -277,6 +283,13 @@ public class ChatActivity extends AppCompatActivity {
 		disposables.add(ChatState.instance.messages()
 				.observeOn(AndroidSchedulers.mainThread())
 				.subscribe(this::setMessages, thr -> Log.e(TAG, "messages observe", thr)));
+
+		View.OnClickListener feedbackClickListener = v -> {
+			feedbackContainerView.postDelayed(() -> feedbackContainerView.setVisibility(View.GONE), 250);
+			viewModel.sendFeedback(v.getId() == R.id.feedbackPositiveView);
+		};
+		feedbackPositiveView.setOnClickListener(feedbackClickListener);
+		feedbackNegativeView.setOnClickListener(feedbackClickListener);
 	}
 
 	private void setMessages(List<ChatMessage> chatMessages) {
@@ -488,6 +501,14 @@ public class ChatActivity extends AppCompatActivity {
 		viewModel.sendMessage(chatMessage);
 	}
 
+	/**
+	 * Here you can use dialog status and employee data
+	 */
+	private void updateDialogState(DialogState dialogState) {
+		boolean shouldShowFeedback = dialogState.rating == null && dialogState.employee != null;
+		feedbackContainerView.setVisibility(shouldShowFeedback ? View.VISIBLE : View.GONE);
+	}
+
 	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {
 		switch (connectionState) {
 			case DISCONNECTED: {
@@ -511,9 +532,5 @@ public class ChatActivity extends AppCompatActivity {
 			return;
 		}
 		Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-	}
-
-	private void updateDialogState(DialogState dialogState) {
-		// Here you can use dialog status and employee data
 	}
 }

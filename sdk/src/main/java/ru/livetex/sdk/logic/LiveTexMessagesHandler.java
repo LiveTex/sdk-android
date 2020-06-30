@@ -25,6 +25,7 @@ import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.FileUploadedResponse;
 import ru.livetex.sdk.entity.GetHistoryRequest;
 import ru.livetex.sdk.entity.HistoryEntity;
+import ru.livetex.sdk.entity.RatingEvent;
 import ru.livetex.sdk.entity.ResponseEntity;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
@@ -155,6 +156,12 @@ public class LiveTexMessagesHandler {
 							   @Nullable String email,
 							   @Nullable Map<String, Object> attrs) {
 		AttributesEntity event = new AttributesEntity(name, phone, email, attrs);
+		String json = EntityMapper.gson.toJson(event);
+		sendJson(json);
+	}
+
+	public void sendRatingEvent(boolean isPositiveFeedback) {
+		RatingEvent event = new RatingEvent(isPositiveFeedback ? 1 : 0);
 		String json = EntityMapper.gson.toJson(event);
 		sendJson(json);
 	}

@@ -12,9 +12,11 @@ public final class DialogState extends BaseEntity {
 	public DialogStatus status = DialogStatus.UNASSIGNED;
 	@NonNull
 	public EmployeeStatus employeeStatus = EmployeeStatus.OFFLINE;
-
 	@Nullable
 	public Employee employee;
+	// null means no feedback done
+	@Nullable
+	public Integer rating;
 
 	public enum DialogStatus {
 		@SerializedName("unassigned")
