@@ -33,7 +33,7 @@ class NetworkStateObserver {
 			NetworkChangeCallback callback = new NetworkChangeCallback(connectionStatusSubject, connectivityManager);
 			connectivityManager.registerDefaultNetworkCallback(callback);
 		} else {
-			NetworkChangeBroadcastReceiver networkChangeBroadcastReceiver = new NetworkChangeBroadcastReceiver(connectionStatusSubject);
+			networkChangeBroadcastReceiver = new NetworkChangeBroadcastReceiver(connectionStatusSubject);
 			IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 			context.registerReceiver(networkChangeBroadcastReceiver, filter);
 		}

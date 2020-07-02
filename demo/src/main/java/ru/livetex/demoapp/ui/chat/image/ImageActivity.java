@@ -1,4 +1,4 @@
-package ru.livetex.demoapp.ui.image;
+package ru.livetex.demoapp.ui.chat.image;
 
 import android.content.Context;
 import android.content.Intent;

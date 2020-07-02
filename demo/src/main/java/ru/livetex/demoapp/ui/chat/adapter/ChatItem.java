@@ -1,4 +1,4 @@
-package ru.livetex.demoapp.ui.adapter;
+package ru.livetex.demoapp.ui.chat.adapter;
 
 import java.util.Date;
 import java.util.Objects;

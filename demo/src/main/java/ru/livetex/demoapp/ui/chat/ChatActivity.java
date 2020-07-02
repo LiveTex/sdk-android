@@ -1,4 +1,4 @@
-package ru.livetex.demoapp.ui;
+package ru.livetex.demoapp.ui.chat;
 
 import android.Manifest;
 import android.app.Activity;
@@ -46,14 +46,14 @@ import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.db.entity.MessageSentState;
-import ru.livetex.demoapp.ui.adapter.AdapterItem;
-import ru.livetex.demoapp.ui.adapter.ChatItem;
-import ru.livetex.demoapp.ui.adapter.ChatMessageDiffUtil;
-import ru.livetex.demoapp.ui.adapter.DateItem;
-import ru.livetex.demoapp.ui.adapter.EmployeeTypingItem;
-import ru.livetex.demoapp.ui.adapter.ItemType;
-import ru.livetex.demoapp.ui.adapter.MessagesAdapter;
-import ru.livetex.demoapp.ui.image.ImageActivity;
+import ru.livetex.demoapp.ui.chat.adapter.AdapterItem;
+import ru.livetex.demoapp.ui.chat.adapter.ChatItem;
+import ru.livetex.demoapp.ui.chat.adapter.ChatMessageDiffUtil;
+import ru.livetex.demoapp.ui.chat.adapter.DateItem;
+import ru.livetex.demoapp.ui.chat.adapter.EmployeeTypingItem;
+import ru.livetex.demoapp.ui.chat.adapter.ItemType;
+import ru.livetex.demoapp.ui.chat.adapter.MessagesAdapter;
+import ru.livetex.demoapp.ui.chat.image.ImageActivity;
 import ru.livetex.demoapp.utils.DateUtils;
 import ru.livetex.demoapp.utils.FileUtils;
 import ru.livetex.demoapp.utils.InputUtils;

@@ -1,4 +1,4 @@
-package ru.livetex.demoapp.ui;
+package ru.livetex.demoapp.ui.chat;
 
 enum ChatViewState {
 	// Normal UI with visible input

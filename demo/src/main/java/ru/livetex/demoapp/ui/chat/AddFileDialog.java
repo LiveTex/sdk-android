@@ -1,4 +1,4 @@
-package ru.livetex.demoapp.ui;
+package ru.livetex.demoapp.ui.chat;
 
 import android.app.Activity;
 import android.app.Dialog;

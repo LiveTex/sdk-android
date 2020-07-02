@@ -1,4 +1,4 @@
-package ru.livetex.demoapp.ui;
+package ru.livetex.demoapp.ui.chat;
 
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -41,6 +41,8 @@ public final class ChatViewModel extends ViewModel {
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private Disposable employeeTypingDisposable = null;
 	private final SharedPreferences sp;
+	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
+	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
 
 	final MutableLiveData<NetworkManager.ConnectionState> connectionStateLiveData = new MutableLiveData<>();
 	final MutableLiveData<List<Department>> departmentsLiveData = new MutableLiveData<>();
@@ -50,9 +52,6 @@ public final class ChatViewModel extends ViewModel {
 
 	// File for upload
 	Uri selectedFile = null;
-
-	private final LiveTexMessagesHandler messagesHandler = LiveTex.getInstance().getMessagesHandler();
-	private final NetworkManager networkManager = LiveTex.getInstance().getNetworkManager();
 
 	public ChatViewModel(SharedPreferences sp) {
 		this.sp = sp;
