@@ -23,6 +23,7 @@ public class SplashActivity extends AppCompatActivity {
 				.subscribe(() -> {
 					startActivity(new Intent(this, ChatActivity.class));
 					finish();
+					overridePendingTransition(0, android.R.anim.fade_out);
 				});
 	}
 }

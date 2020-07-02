@@ -161,7 +161,7 @@ public class LiveTexMessagesHandler {
 	}
 
 	public void sendRatingEvent(boolean isPositiveFeedback) {
-		RatingEvent event = new RatingEvent(isPositiveFeedback ? 1 : 0);
+		RatingEvent event = new RatingEvent(isPositiveFeedback ? "1" : "0");
 		String json = EntityMapper.gson.toJson(event);
 		sendJson(json);
 	}

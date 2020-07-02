@@ -505,21 +505,21 @@ public class ChatActivity extends AppCompatActivity {
 	 * Here you can use dialog status and employee data
 	 */
 	private void updateDialogState(DialogState dialogState) {
-		boolean shouldShowFeedback = dialogState.rating == null && dialogState.employee != null;
+		boolean shouldShowFeedback = dialogState.employee != null && dialogState.employee.rating == null;
 		feedbackContainerView.setVisibility(shouldShowFeedback ? View.VISIBLE : View.GONE);
 	}
 
 	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {
 		switch (connectionState) {
 			case DISCONNECTED: {
-				Toast.makeText(this, "Вебсокет отключен", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this, "Вебсокет отключен", Toast.LENGTH_SHORT).show();
 				break;
 			}
 			case CONNECTING: {
 				break;
 			}
 			case CONNECTED: {
-				Toast.makeText(this, "Вебсокет подключен", Toast.LENGTH_SHORT).show();
+				//Toast.makeText(this, "Вебсокет подключен", Toast.LENGTH_SHORT).show();
 				break;
 			}
 			default:
