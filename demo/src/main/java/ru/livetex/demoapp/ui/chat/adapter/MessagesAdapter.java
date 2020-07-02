@@ -446,6 +446,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static void setState(TextView timeView, ChatItem message) {
 		timeView.setText(DateUtils.dateToTime(message.createdAt));
 
+		if (message.isIncoming) {
+			return;
+		}
+
 		// todo: double check should be on read state
 		switch (message.sentState) {
 			case NOT_SENT:
