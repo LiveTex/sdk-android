@@ -58,7 +58,6 @@ public final class ChatViewModel extends ViewModel {
 	public ChatViewModel(SharedPreferences sp) {
 		this.sp = sp;
 		subscribe();
-		connect();
 	}
 
 	@Override
@@ -342,5 +341,13 @@ public final class ChatViewModel extends ViewModel {
 
 	public void sendFeedback(boolean isPositive) {
 		messagesHandler.sendRatingEvent(isPositive);
+	}
+
+	public void onResume() {
+		connect();
+	}
+
+	public void onPause() {
+		networkManager.forceDisconnect();
 	}
 }

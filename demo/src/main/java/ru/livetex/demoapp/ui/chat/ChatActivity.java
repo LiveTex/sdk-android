@@ -31,6 +31,9 @@ import com.yalantis.ucrop.UCrop;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -99,6 +102,19 @@ public class ChatActivity extends AppCompatActivity {
 	private TextView quoteView;
 	private ImageView quoteCloseView;
 
+	// For disconnecting from websocket on pause and connecting on resume. If you need active websocket while app in background, just use viewModel.onResume()
+	private final LifecycleObserver lifecycleObserver = new LifecycleObserver() {
+		@OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+		public void resumed() {
+			viewModel.onResume();
+		}
+
+		@OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+		public void paused() {
+			viewModel.onPause();
+		}
+	};
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -131,6 +147,7 @@ public class ChatActivity extends AppCompatActivity {
 
 		setupUI();
 		subscribeViewModel();
+		getLifecycle().addObserver(lifecycleObserver);
 	}
 
 	private void subscribeViewModel() {
@@ -156,6 +173,7 @@ public class ChatActivity extends AppCompatActivity {
 			addFileDialog.close();
 			addFileDialog = null;
 		}
+		getLifecycle().removeObserver(lifecycleObserver);
 	}
 
 	@Override
