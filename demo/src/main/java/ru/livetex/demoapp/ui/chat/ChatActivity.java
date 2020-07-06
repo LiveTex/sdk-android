@@ -70,7 +70,7 @@ public class ChatActivity extends AppCompatActivity {
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private final RxPermissions rxPermissions = new RxPermissions(this);
 	private ChatViewModel viewModel;
-	private MessagesAdapter adapter = new MessagesAdapter();
+	private final MessagesAdapter adapter = new MessagesAdapter();
 	private AddFileDialog addFileDialog = null;
 
 	private final static long TEXT_TYPING_DELAY = 500L; // milliseconds
@@ -95,6 +95,9 @@ public class ChatActivity extends AppCompatActivity {
 	private ImageView filePreviewView;
 	private ImageView filePreviewDeleteView;
 	private TextView fileNameView;
+	private ViewGroup quoteContainerView;
+	private TextView quoteView;
+	private ImageView quoteCloseView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +123,9 @@ public class ChatActivity extends AppCompatActivity {
 		filePreviewView = findViewById(R.id.filePreviewView);
 		filePreviewDeleteView = findViewById(R.id.filePreviewDeleteView);
 		fileNameView = findViewById(R.id.fileNameView);
+		quoteContainerView = findViewById(R.id.quoteContainerView);
+		quoteView = findViewById(R.id.quoteView);
+		quoteCloseView = findViewById(R.id.quoteCloseView);
 
 		viewModel = new ChatViewModelFactory(getSharedPreferences("livetex-demo", Context.MODE_PRIVATE)).create(ChatViewModel.class);
 
@@ -225,27 +231,23 @@ public class ChatActivity extends AppCompatActivity {
 		setupInput();
 
 		adapter.setOnMessageClickListener(item -> {
-			// Try to re-send failed message
-			if (item.sentState == MessageSentState.FAILED) {
-				ChatMessage message = ChatState.instance.getMessage(item.id);
-				if (message != null) {
-					viewModel.resendMessage(message);
-				}
-			} else {
-				if (item.fileUrl != null) {
-					// Download file or open full screen image
-					// todo: will be something better in future
-					boolean isImgFile = item.fileUrl.contains("jpg") ||
-							item.fileUrl.contains("jpeg") ||
-							item.fileUrl.contains("png") ||
-							item.fileUrl.contains("bmp");
+			MessageActionsDialog dialog = new MessageActionsDialog(this, item.sentState == MessageSentState.FAILED);
+			dialog.show();
+			dialog.attach(this, viewModel, item);
+		});
 
-					if (isImgFile) {
-						ImageActivity.start(this, item.fileUrl);
-					} else {
-						IntentUtils.goUrl(this, item.fileUrl);
-					}
-				}
+		adapter.setOnFileClickListener(fileUrl -> {
+			// Download file or open full screen image
+			// todo: will be something better in future
+			boolean isImgFile = fileUrl.contains("jpg") ||
+					fileUrl.contains("jpeg") ||
+					fileUrl.contains("png") ||
+					fileUrl.contains("bmp");
+
+			if (isImgFile) {
+				ImageActivity.start(this, fileUrl);
+			} else {
+				IntentUtils.goUrl(this, fileUrl);
 			}
 		});
 
@@ -290,6 +292,10 @@ public class ChatActivity extends AppCompatActivity {
 		};
 		feedbackPositiveView.setOnClickListener(feedbackClickListener);
 		feedbackNegativeView.setOnClickListener(feedbackClickListener);
+
+		quoteCloseView.setOnClickListener(v -> {
+			viewModel.setQuoteText(null);
+		});
 	}
 
 	private void setMessages(List<ChatMessage> chatMessages) {
@@ -407,18 +413,20 @@ public class ChatActivity extends AppCompatActivity {
 			return;
 		}
 
+		// Unset visibility changes
+		inputFieldContainerView.setBackground(null);
+		inputView.setEnabled(true);
+		quoteContainerView.setVisibility(View.GONE);
+		filePreviewView.setVisibility(View.GONE);
+		filePreviewDeleteView.setVisibility(View.GONE);
+		fileNameView.setVisibility(View.GONE);
+
 		switch (viewState) {
 			case NORMAL:
 				inputContainerView.setVisibility(View.VISIBLE);
 				attributesContainerView.setVisibility(View.GONE);
 				departmentsContainerView.setVisibility(View.GONE);
 
-				// Unset everything from SEND_FILE_PREVIEW
-				inputFieldContainerView.setBackground(null);
-				inputView.setEnabled(true);
-				filePreviewView.setVisibility(View.GONE);
-				filePreviewDeleteView.setVisibility(View.GONE);
-				fileNameView.setVisibility(View.GONE);
 				break;
 			case SEND_FILE_PREVIEW:
 				// gray background
@@ -449,7 +457,10 @@ public class ChatActivity extends AppCompatActivity {
 					fileNameView.setVisibility(View.VISIBLE);
 					fileNameView.setText(filename);
 				}
-
+				break;
+			case QUOTE:
+				quoteContainerView.setVisibility(View.VISIBLE);
+				quoteView.setText(viewModel.getQuoteText());
 				break;
 			case ATTRIBUTES:
 				InputUtils.hideKeyboard(this);
@@ -481,6 +492,7 @@ public class ChatActivity extends AppCompatActivity {
 
 	private void onFileSelected(Uri file) {
 		viewModel.selectedFile = file;
+		viewModel.setQuoteText(null);
 		viewModel.viewStateLiveData.setValue(ChatViewState.SEND_FILE_PREVIEW);
 	}
 
@@ -492,12 +504,13 @@ public class ChatActivity extends AppCompatActivity {
 			return;
 		}
 
-		ChatMessage chatMessage = ChatState.instance.createNewTextMessage(text);
+		ChatMessage chatMessage = ChatState.instance.createNewTextMessage(text, viewModel.getQuoteText());
 		inputView.setText(null);
 
 		// wait a bit and scroll to newly created user message
 		inputView.postDelayed(() -> messagesView.smoothScrollToPosition(adapter.getItemCount() - 1), 200);
 
+		viewModel.setQuoteText(null);
 		viewModel.sendMessage(chatMessage);
 	}
 

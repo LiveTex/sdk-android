@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Spannable;
 import android.text.TextUtils;
-import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,6 +48,8 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private List<AdapterItem> items = new ArrayList<>();
 	@Nullable
 	private Consumer<ChatItem> onMessageClickListener = null;
+	@Nullable
+	private Consumer<String> onFileClickListener = null;
 
 	@NonNull
 	@Override
@@ -108,16 +109,16 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				((OutgoingMessageHolder) holder).bind((ChatItem) message);
 				break;
 			case VIEW_TYPE_IMAGE_INCOMING:
-				((IncomingImageHolder) holder).bind((ChatItem) message);
+				((IncomingImageHolder) holder).bind((ChatItem) message, onFileClickListener);
 				break;
 			case VIEW_TYPE_IMAGE_OUTGOING:
-				((OutgoingImageHolder) holder).bind((ChatItem) message);
+				((OutgoingImageHolder) holder).bind((ChatItem) message, onFileClickListener);
 				break;
 			case VIEW_TYPE_FILE_INCOMING:
-				((IncomingFileHolder) holder).bind((ChatItem) message);
+				((IncomingFileHolder) holder).bind((ChatItem) message, onFileClickListener);
 				break;
 			case VIEW_TYPE_FILE_OUTGOING:
-				((OutgoingFileHolder) holder).bind((ChatItem) message);
+				((OutgoingFileHolder) holder).bind((ChatItem) message, onFileClickListener);
 				break;
 			case VIEW_TYPE_SYSTEM_MESSAGE:
 				((SystemMessageHolder) holder).bind((ChatItem) message);
@@ -207,11 +208,17 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		this.onMessageClickListener = onMessageClickListener;
 	}
 
+	public void setOnFileClickListener(@NonNull Consumer<String> onFileClickListener) {
+		this.onFileClickListener = onFileClickListener;
+	}
+
 	private static class IncomingMessageHolder extends RecyclerView.ViewHolder {
 		TextView messageView;
 		ImageView avatarView;
 		TextView nameView;
 		TextView timeView;
+		TextView quoteView;
+		View quoteSeparatorView;
 
 		IncomingMessageHolder(View itemView) {
 			super(itemView);
@@ -220,12 +227,13 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			messageView = itemView.findViewById(R.id.messageView);
 			avatarView = itemView.findViewById(R.id.avatarView);
 			timeView = itemView.findViewById(R.id.timeView);
+			quoteView = itemView.findViewById(R.id.quoteView);
+			quoteSeparatorView = itemView.findViewById(R.id.quoteSeparatorView);
 		}
 
 		void bind(ChatItem message) {
-			Spannable text = ru.livetex.demoapp.utils.TextUtils.applyLinks(message.content);
-			messageView.setText(text);
-			messageView.setMovementMethod(LinkMovementMethod.getInstance());
+			Spannable text = ru.livetex.demoapp.utils.TextUtils.setTextWithLinks(message.content, messageView);
+			handleQuotedText(message, quoteView, quoteSeparatorView);
 			handleLinkPreview(messageView, text, message.id);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
@@ -292,18 +300,21 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static class OutgoingMessageHolder extends RecyclerView.ViewHolder {
 		TextView messageView;
 		TextView timeView;
+		TextView quoteView;
+		View quoteSeparatorView;
 
 		OutgoingMessageHolder(View itemView) {
 			super(itemView);
 
 			messageView = itemView.findViewById(R.id.messageView);
 			timeView = itemView.findViewById(R.id.timeView);
+			quoteView = itemView.findViewById(R.id.quoteView);
+			quoteSeparatorView = itemView.findViewById(R.id.quoteSeparatorView);
 		}
 
 		void bind(ChatItem message) {
-			Spannable text = ru.livetex.demoapp.utils.TextUtils.applyLinks(message.content);
-			messageView.setText(text);
-			messageView.setMovementMethod(LinkMovementMethod.getInstance());
+			Spannable text = ru.livetex.demoapp.utils.TextUtils.setTextWithLinks(message.content, messageView);
+			handleQuotedText(message, quoteView, quoteSeparatorView);
 			handleLinkPreview(messageView, text, message.id);
 
 			setState(timeView, message);
@@ -325,7 +336,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			timeView = itemView.findViewById(R.id.timeView);
 		}
 
-		void bind(ChatItem message) {
+		void bind(ChatItem message, Consumer<String> onFileClickListener) {
 			messageView.setText(message.content);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
@@ -338,9 +349,18 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
-			messageView.setTextIsSelectable(false);
 
 			setState(timeView, message);
+
+			if (onFileClickListener != null) {
+				messageView.setOnClickListener(view -> {
+					try {
+						onFileClickListener.accept(message.fileUrl);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				});
+			}
 		}
 	}
 
@@ -355,14 +375,23 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			timeView = itemView.findViewById(R.id.timeView);
 		}
 
-		void bind(ChatItem message) {
+		void bind(ChatItem message, Consumer<String> onFileClickListener) {
 			messageView.setText(message.content);
 
 			setState(timeView, message);
 
 			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
-			messageView.setTextIsSelectable(false);
+
+			if (onFileClickListener != null) {
+				messageView.setOnClickListener(view -> {
+					try {
+						onFileClickListener.accept(message.fileUrl);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				});
+			}
 		}
 	}
 
@@ -410,7 +439,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			timeView = itemView.findViewById(R.id.timeView);
 		}
 
-		void bind(ChatItem message) {
+		void bind(ChatItem message, Consumer<String> onFileClickListener) {
 			loadImage(message, imageView);
 
 			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
@@ -422,6 +451,16 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			nameView.setText(opName);
 
 			setState(timeView, message);
+
+			if (onFileClickListener != null) {
+				imageView.setOnClickListener(view -> {
+					try {
+						onFileClickListener.accept(message.fileUrl);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				});
+			}
 		}
 	}
 
@@ -436,10 +475,20 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			timeView = itemView.findViewById(R.id.timeView);
 		}
 
-		void bind(ChatItem message) {
+		void bind(ChatItem message, Consumer<String> onFileClickListener) {
 			loadImage(message, imageView);
 
 			setState(timeView, message);
+
+			if (onFileClickListener != null) {
+				imageView.setOnClickListener(view -> {
+					try {
+						onFileClickListener.accept(message.fileUrl);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				});
+			}
 		}
 	}
 
@@ -492,6 +541,13 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		} else {
 			avatarView.setImageResource(R.drawable.avatar);
 		}
+	}
+
+	private static void handleQuotedText(ChatItem message, TextView quoteView, View quoteSeparatorView) {
+		boolean hasQuote = message.quoteText != null;
+		quoteView.setVisibility(hasQuote ? View.VISIBLE : View.GONE);
+		quoteSeparatorView.setVisibility(hasQuote ? View.VISIBLE : View.GONE);
+		quoteView.setText(message.quoteText);
 	}
 
 	private static void handleLinkPreview(TextView messageView, Spannable text, String messageId) {

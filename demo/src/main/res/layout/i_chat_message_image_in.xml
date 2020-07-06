@@ -12,10 +12,9 @@
 		android:id="@+id/nameView"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="16dp"
-		android:textColor="#000000"
+		android:textColor="@android:color/black"
 		android:textSize="11sp"
-		app:layout_constraintStart_toEndOf="@id/avatarView"
+		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent"
 		tools:text="Имя оператора" />
 
@@ -23,9 +22,10 @@
 		android:id="@+id/avatarView"
 		android:layout_width="32dp"
 		android:layout_height="32dp"
+		android:layout_marginTop="4dp"
 		android:src="@drawable/avatar"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintStart_toStartOf="parent" />
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/nameView" />
 
 	<ImageView
 		android:id="@+id/image"

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
@@ -14,10 +13,9 @@
 		android:id="@+id/nameView"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="16dp"
-		android:textColor="#000000"
+		android:textColor="@android:color/black"
 		android:textSize="11sp"
-		app:layout_constraintStart_toEndOf="@id/avatarView"
+		app:layout_constraintStart_toStartOf="parent"
 		app:layout_constraintTop_toTopOf="parent"
 		tools:text="Имя оператора" />
 
@@ -25,32 +23,66 @@
 		android:id="@+id/avatarView"
 		android:layout_width="32dp"
 		android:layout_height="32dp"
+		android:layout_marginTop="4dp"
 		android:src="@drawable/avatar"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintStart_toStartOf="parent" />
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toBottomOf="@id/nameView" />
 
-	<TextView
-		android:id="@+id/messageView"
+	<androidx.constraintlayout.widget.ConstraintLayout
+		android:id="@+id/messageContainerView"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="6dp"
-		android:layout_marginTop="4dp"
 		android:background="@drawable/bg_gray_rounded"
-		android:minWidth="70dp"
+		android:layout_marginTop="4dp"
+		android:minWidth="30dp"
 		android:paddingStart="14dp"
 		android:paddingTop="8dp"
 		android:paddingEnd="14dp"
 		android:paddingBottom="8dp"
-		android:textColor="#000000"
-		android:textIsSelectable="true"
-		android:textSize="16sp"
 		app:layout_constrainedWidth="true"
 		app:layout_constraintEnd_toStartOf="@+id/timeView"
 		app:layout_constraintHorizontal_bias="0.0"
 		app:layout_constraintHorizontal_chainStyle="packed"
 		app:layout_constraintStart_toEndOf="@+id/avatarView"
-		app:layout_constraintTop_toBottomOf="@id/nameView"
-		tools:text="teaвфывфывфывфывфыввфывфывфыв" />
+		app:layout_constraintTop_toBottomOf="@id/nameView">
+
+		<View
+			android:id="@+id/quoteSeparatorView"
+			android:layout_width="2dp"
+			android:layout_height="0dp"
+			android:background="#3E7AD7"
+			android:visibility="gone"
+			android:layout_marginTop="2dp"
+			app:layout_constraintBottom_toBottomOf="@id/quoteView"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="@id/quoteView" />
+
+		<TextView
+			android:id="@+id/quoteView"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textSize="14sp"
+			android:maxLines="1"
+			android:ellipsize="end"
+			android:visibility="gone"
+			android:layout_marginStart="4dp"
+			android:paddingBottom="2dp"
+			android:textColor="#000000"
+			app:layout_constraintStart_toEndOf="@id/quoteSeparatorView"
+			app:layout_constraintTop_toTopOf="parent"
+			tools:text="quoted textdfasdasdasdasd" />
+
+		<TextView
+			android:id="@+id/messageView"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textColor="#000000"
+			android:textSize="16sp"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/quoteView"
+			tools:text="test" />
+	</androidx.constraintlayout.widget.ConstraintLayout>
 
 	<TextView
 		android:id="@+id/timeView"
@@ -61,10 +93,10 @@
 		android:textColor="@android:color/black"
 		android:textSize="12sp"
 		app:layout_constrainedWidth="true"
-		app:layout_constraintBottom_toBottomOf="@id/messageView"
+		app:layout_constraintBottom_toBottomOf="@id/messageContainerView"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintHorizontal_bias="0.0"
 		app:layout_constraintHorizontal_chainStyle="packed"
-		app:layout_constraintStart_toEndOf="@+id/messageView"
+		app:layout_constraintStart_toEndOf="@+id/messageContainerView"
 		tools:text="12:34" />
 </androidx.constraintlayout.widget.ConstraintLayout>

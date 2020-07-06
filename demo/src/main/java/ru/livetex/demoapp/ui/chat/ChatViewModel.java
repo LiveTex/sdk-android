@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import io.reactivex.Completable;
@@ -52,6 +53,7 @@ public final class ChatViewModel extends ViewModel {
 
 	// File for upload
 	Uri selectedFile = null;
+	private String quoteText = null;
 
 	public ChatViewModel(SharedPreferences sp) {
 		this.sp = sp;
@@ -231,6 +233,20 @@ public final class ChatViewModel extends ViewModel {
 					errorLiveData.setValue(thr.getMessage());
 					Log.e(TAG, "sendDepartmentSelectionEvent", thr);
 				});
+	}
+
+	@Nullable
+	public String getQuoteText() {
+		return quoteText;
+	}
+
+	public void setQuoteText(@Nullable String quoteText) {
+		this.quoteText = quoteText;
+		if (TextUtils.isEmpty(this.quoteText)) {
+			viewStateLiveData.setValue(ChatViewState.NORMAL);
+		} else {
+			viewStateLiveData.setValue(ChatViewState.QUOTE);
+		}
 	}
 
 	private void updateHistory(HistoryEntity historyEntity) {

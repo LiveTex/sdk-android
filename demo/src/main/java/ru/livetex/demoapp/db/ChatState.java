@@ -1,5 +1,7 @@
 package ru.livetex.demoapp.db;
 
+import android.text.TextUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -72,8 +74,12 @@ public final class ChatState {
 	/**
 	 * Create local message with fake id (will be overriden by server)
 	 * // todo: id scheme need improvement. now no way to distinguish between sent and local messages (fake and not fake id)
+	 * @param quoteText - quote other message. It's a temporary solution, here should be id of quoted message.
 	 */
-	public synchronized ChatMessage createNewTextMessage(String text) {
+	public synchronized ChatMessage createNewTextMessage(String text, String quoteText) {
+		if (!TextUtils.isEmpty(quoteText)) {
+			text = "> " + quoteText + "\n" + text;
+		}
 		ChatMessage chatMessage = new ChatMessage(
 				UUID.randomUUID().toString(),
 				text,

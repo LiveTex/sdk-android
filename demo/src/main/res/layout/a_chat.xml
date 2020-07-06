@@ -245,8 +245,7 @@
 			android:layout_marginEnd="8dp"
 			app:layout_constraintEnd_toStartOf="@+id/sendView"
 			app:layout_constraintStart_toEndOf="@+id/addView"
-			app:layout_constraintTop_toTopOf="parent"
-			tools:background="@drawable/bg_input_field_container">
+			app:layout_constraintTop_toTopOf="parent">
 
 			<ImageView
 				android:id="@+id/filePreviewView"
@@ -259,7 +258,7 @@
 				app:layout_constraintStart_toStartOf="parent"
 				app:layout_constraintTop_toTopOf="parent"
 				tools:src="@drawable/logo"
-				tools:visibility="visible" />
+				tools:visibility="gone" />
 
 			<TextView
 				android:id="@+id/fileNameView"
@@ -275,7 +274,7 @@
 				app:layout_constraintStart_toEndOf="@+id/filePreviewView"
 				app:layout_constraintTop_toTopOf="@+id/filePreviewView"
 				tools:text="filename"
-				tools:visibility="visible" />
+				tools:visibility="gone" />
 
 			<ImageView
 				android:id="@+id/filePreviewDeleteView"
@@ -285,11 +284,60 @@
 				android:focusable="true"
 				android:paddingStart="16dp"
 				android:paddingBottom="16dp"
-				android:src="@drawable/close"
+				android:src="@drawable/close_circled"
 				android:visibility="gone"
 				app:layout_constraintEnd_toEndOf="@+id/filePreviewView"
 				app:layout_constraintTop_toTopOf="@+id/filePreviewView"
-				tools:visibility="visible" />
+				tools:visibility="gone" />
+
+			<androidx.constraintlayout.widget.ConstraintLayout
+				android:id="@+id/quoteContainerView"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="6dp"
+				android:layout_marginBottom="2dp"
+				android:background="@android:color/white"
+				android:visibility="gone"
+				app:layout_constraintBottom_toTopOf="@+id/inputView"
+				app:layout_constraintEnd_toEndOf="@id/inputView"
+				app:layout_constraintStart_toStartOf="@id/inputView"
+				app:layout_constraintTop_toBottomOf="@id/filePreviewView"
+				tools:visibility="visible">
+
+				<View
+					android:id="@+id/quoteSeparatorView"
+					android:layout_width="2dp"
+					android:layout_height="0dp"
+					android:background="#3E7AD7"
+					app:layout_constraintBottom_toBottomOf="parent"
+					app:layout_constraintStart_toStartOf="parent"
+					app:layout_constraintTop_toTopOf="parent" />
+
+				<TextView
+					android:id="@+id/quoteView"
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_marginStart="8dp"
+					android:ellipsize="end"
+					android:maxLines="2"
+					android:textColor="@android:color/black"
+					app:layout_constraintBottom_toBottomOf="parent"
+					app:layout_constraintEnd_toStartOf="@+id/quoteCloseView"
+					app:layout_constraintStart_toEndOf="@+id/quoteSeparatorView"
+					app:layout_constraintTop_toTopOf="parent"
+					tools:text="123" />
+
+				<ImageView
+					android:id="@+id/quoteCloseView"
+					android:layout_width="36dp"
+					android:layout_height="36dp"
+					android:background="?attr/selectableItemBackgroundBorderless"
+					android:padding="10dp"
+					android:src="@drawable/close"
+					app:layout_constraintBottom_toBottomOf="parent"
+					app:layout_constraintEnd_toEndOf="parent"
+					app:layout_constraintTop_toTopOf="parent" />
+			</androidx.constraintlayout.widget.ConstraintLayout>
 
 			<EditText
 				android:id="@+id/inputView"
@@ -314,8 +362,8 @@
 				app:layout_constraintBottom_toBottomOf="parent"
 				app:layout_constraintEnd_toEndOf="parent"
 				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toBottomOf="@+id/filePreviewView"
-				app:layout_goneMarginTop="0dp" />
+				app:layout_constraintTop_toBottomOf="@+id/quoteContainerView"
+				app:layout_goneMarginTop="6dp" />
 		</androidx.constraintlayout.widget.ConstraintLayout>
 
 		<ImageView

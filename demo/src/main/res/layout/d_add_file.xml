@@ -6,6 +6,7 @@
 	android:layout_height="wrap_content"
 	android:background="@android:color/transparent"
 	android:orientation="vertical"
+	android:minWidth="300dp"
 	android:paddingStart="10dp"
 	android:paddingTop="20dp"
 	android:paddingEnd="10dp"
@@ -27,6 +28,7 @@
 
 			<TextView
 				android:id="@+id/cameraView"
+				android:background="@drawable/bg_bottom_gray"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:clickable="true"
@@ -43,11 +45,6 @@
 				android:textColor="@android:color/black"
 				android:textSize="18sp" />
 
-			<View
-				android:layout_width="match_parent"
-				android:layout_height="1dp"
-				android:background="#E5E5E5" />
-
 			<TextView
 				android:id="@+id/galleryView"
 				android:layout_width="match_parent"
@@ -61,15 +58,11 @@
 				android:paddingTop="10dp"
 				android:paddingEnd="12dp"
 				android:paddingBottom="10dp"
+				android:background="@drawable/bg_bottom_gray"
 				android:text="Фото или видео"
 				android:textAppearance="?android:textAppearanceMedium"
 				android:textColor="@android:color/black"
 				android:textSize="18sp" />
-
-			<View
-				android:layout_width="match_parent"
-				android:layout_height="1dp"
-				android:background="#E5E5E5" />
 
 			<TextView
 				android:id="@+id/fileView"

@@ -12,13 +12,14 @@ import ru.livetex.sdk.entity.SystemUser;
 
 /**
  * This is wrapper for ChatMessage entity. It allows to use only UI data and also made adapter item mutable (for DiffUtil).
- * In real project fields will differ.
  */
 public class ChatItem implements Comparable, AdapterItem {
 	@NonNull
 	public String id;
 	@NonNull
 	public String content;
+	@Nullable
+	public String quoteText = null;
 	@NonNull
 	public final Date createdAt; // timestamp in millis
 	public final boolean isIncoming;
@@ -38,6 +39,7 @@ public class ChatItem implements Comparable, AdapterItem {
 		this.fileUrl = message.fileUrl;
 		this.creator = message.creator;
 		this.isSystem = message.creator instanceof SystemUser;
+		findQuotedText();
 	}
 
 	@Override
@@ -98,6 +100,7 @@ public class ChatItem implements Comparable, AdapterItem {
 				isSystem == chatItem.isSystem &&
 				id.equals(chatItem.id) &&
 				content.equals(chatItem.content) &&
+				Objects.equals(quoteText, chatItem.quoteText) &&
 				createdAt.equals(chatItem.createdAt) &&
 				sentState == chatItem.sentState &&
 				creator == chatItem.creator;
@@ -105,6 +108,16 @@ public class ChatItem implements Comparable, AdapterItem {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, content, createdAt, isIncoming, isSystem, sentState, creator);
+		return Objects.hash(id, content, quoteText, createdAt, isIncoming, isSystem, sentState, creator);
+	}
+
+	// It's a temporary solution
+	private void findQuotedText() {
+		boolean hasQuote = content.startsWith("> ") && content.contains("\n");
+		if (hasQuote) {
+			int prefixLength = "> ".length();
+			quoteText = content.substring(prefixLength, content.indexOf("\n"));
+			content = content.substring(quoteText.length() + prefixLength + 1);
+		}
 	}
 }
