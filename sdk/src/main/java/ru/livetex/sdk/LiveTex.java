@@ -66,7 +66,7 @@ public final class LiveTex {
 		/**
 		 * deviceId is unique device identifier. Used for pushes, so it should be Firebase token.
 		 */
-		public Builder setDeviceId(@NonNull String deviceId) {
+		public Builder setDeviceId(String deviceId) {
 			this.deviceId = deviceId;
 			return this;
 		}
