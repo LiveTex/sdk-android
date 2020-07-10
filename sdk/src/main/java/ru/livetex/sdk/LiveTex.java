@@ -43,7 +43,7 @@ public final class LiveTex {
 		@NonNull
 		private final String touchpoint;
 		@Nullable
-		private String deviceId = null;
+		private String deviceToken = null;
 		@NonNull
 		private final String deviceType = "android";
 
@@ -64,10 +64,10 @@ public final class LiveTex {
 		}
 
 		/**
-		 * deviceId is unique device identifier. Used for pushes, so it should be Firebase token.
+		 * deviceToken is unique device identifier. Used for pushes, so it should be Firebase token.
 		 */
-		public Builder setDeviceId(String deviceId) {
-			this.deviceId = deviceId;
+		public Builder setDeviceToken(String deviceToken) {
+			this.deviceToken = deviceToken;
 			return this;
 		}
 
@@ -89,7 +89,7 @@ public final class LiveTex {
 
 		public void build() {
 			instance = new LiveTex(this);
-			NetworkManager.init(host, touchpoint, deviceId, deviceType);
+			NetworkManager.init(host, touchpoint, deviceToken, deviceType);
 			messageHandler.init();
 			websocketListener.init();
 		}

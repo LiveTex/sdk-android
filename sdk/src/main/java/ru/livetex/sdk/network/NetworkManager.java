@@ -48,7 +48,7 @@ public final class NetworkManager {
 	@NonNull
 	private final String touchpoint;
 	@Nullable
-	private final String deviceId;
+	private final String deviceToken;
 	@Nullable
 	private final String deviceType;
 	@Nullable
@@ -61,13 +61,13 @@ public final class NetworkManager {
 
 	private NetworkManager(@NonNull String host,
 						   @NonNull String touchpoint,
-						   @Nullable String deviceId,
+						   @Nullable String deviceToken,
 						   @Nullable String deviceType) {
 		this.authHost = "https://" + host + "v1/";
 		this.wsEndpoint = "wss://" + host + "v1/ws/{userToken}";
 		this.uploadEndpoint = "https://" + host + "v1/upload";
 		this.touchpoint = touchpoint;
-		this.deviceId = deviceId;
+		this.deviceToken = deviceToken;
 		this.deviceType = deviceType;
 		this.websocketListener = LiveTex.getInstance().getWebsocketListener();
 		subscribeToWebsocket();
@@ -86,9 +86,9 @@ public final class NetworkManager {
 
 	public static void init(@NonNull String host,
 							@NonNull String touchpoint,
-							String deviceId,
+							String deviceToken,
 							String deviceType) {
-		instance = new NetworkManager(host, touchpoint, deviceId, deviceType);
+		instance = new NetworkManager(host, touchpoint, deviceToken, deviceType);
 	}
 
 	public static NetworkManager getInstance() {
@@ -113,7 +113,7 @@ public final class NetworkManager {
 
 	public Single<String> connect(@Nullable String userToken) {
 		return Single.fromCallable(() -> {
-			lastUserToken = auth(touchpoint, userToken, deviceId, deviceType);
+			lastUserToken = auth(touchpoint, userToken, deviceToken, deviceType);
 			connectWebSocket();
 			return lastUserToken;
 		});
@@ -160,7 +160,7 @@ public final class NetworkManager {
 
 	private String auth(@NonNull String touchpoint,
 						@Nullable String userToken,
-						@Nullable String deviceId,
+						@Nullable String deviceToken,
 						@Nullable String deviceType) throws IOException {
 		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
 				.newBuilder()
@@ -169,8 +169,8 @@ public final class NetworkManager {
 		if (!TextUtils.isEmpty(userToken)) {
 			urlBuilder.addQueryParameter("userToken", userToken);
 		}
-		if (!TextUtils.isEmpty(deviceId)) {
-			urlBuilder.addQueryParameter("deviceId", deviceId);
+		if (!TextUtils.isEmpty(deviceToken)) {
+			urlBuilder.addQueryParameter("deviceToken", deviceToken);
 		}
 		if (!TextUtils.isEmpty(deviceType)) {
 			urlBuilder.addQueryParameter("deviceType", deviceType);

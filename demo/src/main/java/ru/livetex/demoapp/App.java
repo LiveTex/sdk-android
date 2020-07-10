@@ -49,7 +49,7 @@ public class App extends Application {
 
 	private void initLiveTex() {
 		new LiveTex.Builder(Const.TOUCHPOINT)
-				.setDeviceId(FirebaseInstanceId.getInstance().getToken())
+				.setDeviceToken(FirebaseInstanceId.getInstance().getToken())
 				.build();
 	}
 }
