@@ -111,9 +111,22 @@ public final class NetworkManager {
 		networkStateObserver.stopObserve(context);
 	}
 
-	public Single<String> connect(@Nullable String userToken) {
+	/**
+	 * Do authorization and connect to chat websocket.
+	 * @param userToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
+	 * @param authTokenType - AuthTokenType.DEFAULT for standard (LiveTex) token system.
+	 */
+	public Single<String> connect(@Nullable String userToken, AuthTokenType authTokenType) {
 		return Single.fromCallable(() -> {
-			lastUserToken = auth(touchpoint, userToken, deviceToken, deviceType);
+			switch (authTokenType) {
+				case DEFAULT:
+					lastUserToken = auth(touchpoint, userToken, deviceToken, deviceType, null);
+					break;
+				case CUSTOM:
+					lastUserToken = auth(touchpoint, null, deviceToken, deviceType, userToken);
+					break;
+			}
+
 			connectWebSocket();
 			return lastUserToken;
 		});
@@ -161,13 +174,17 @@ public final class NetworkManager {
 	private String auth(@NonNull String touchpoint,
 						@Nullable String userToken,
 						@Nullable String deviceToken,
-						@Nullable String deviceType) throws IOException {
+						@Nullable String deviceType,
+						@Nullable String customUserToken) throws IOException {
 		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
 				.newBuilder()
 				.addQueryParameter("touchPoint", touchpoint);
 
 		if (!TextUtils.isEmpty(userToken)) {
 			urlBuilder.addQueryParameter("userToken", userToken);
+		}
+		if (!TextUtils.isEmpty(customUserToken)) {
+			urlBuilder.addQueryParameter("customUserToken", customUserToken);
 		}
 		if (!TextUtils.isEmpty(deviceToken)) {
 			urlBuilder.addQueryParameter("deviceToken", deviceToken);

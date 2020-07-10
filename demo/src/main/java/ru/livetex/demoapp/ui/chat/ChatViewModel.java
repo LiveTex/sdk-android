@@ -34,6 +34,7 @@ import ru.livetex.sdk.entity.HistoryEntity;
 import ru.livetex.sdk.entity.LiveTexError;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
+import ru.livetex.sdk.network.AuthTokenType;
 import ru.livetex.sdk.network.NetworkManager;
 
 public final class ChatViewModel extends ViewModel {
@@ -310,7 +311,7 @@ public final class ChatViewModel extends ViewModel {
 	private void connect() {
 		String userToken = sp.getString(Const.KEY_USER_TOKEN, null);
 
-		disposables.add(networkManager.connect(userToken)
+		disposables.add(networkManager.connect(userToken, AuthTokenType.DEFAULT)
 				.subscribeOn(Schedulers.io())
 				.observeOn(Schedulers.io())
 				.subscribe(userIdReceived -> {
