@@ -148,19 +148,6 @@ public class ChatActivity extends AppCompatActivity {
 		setupUI();
 		subscribeViewModel();
 		getLifecycle().addObserver(lifecycleObserver);
-	}
-
-	private void subscribeViewModel() {
-		viewModel.viewStateLiveData.observe(this, this::setViewState);
-		viewModel.errorLiveData.observe(this, this::onError);
-		viewModel.connectionStateLiveData.observe(this, this::onConnectionStateUpdate);
-		viewModel.departmentsLiveData.observe(this, this::showDepartments);
-		viewModel.dialogStateUpdateLiveData.observe(this, this::updateDialogState);
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
 		NetworkManager.getInstance().startObserveNetworkState(this);
 	}
 
@@ -243,6 +230,14 @@ public class ChatActivity extends AppCompatActivity {
 				break;
 			}
 		}
+	}
+
+	private void subscribeViewModel() {
+		viewModel.viewStateLiveData.observe(this, this::setViewState);
+		viewModel.errorLiveData.observe(this, this::onError);
+		viewModel.connectionStateLiveData.observe(this, this::onConnectionStateUpdate);
+		viewModel.departmentsLiveData.observe(this, this::showDepartments);
+		viewModel.dialogStateUpdateLiveData.observe(this, this::updateDialogState);
 	}
 
 	private void setupUI() {

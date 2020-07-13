@@ -1,7 +1,8 @@
 # sdk-android
 Android SDK и демо-приложение для нового VisitorAPI
 
-**Подключение SDK**  
+Подключение SDK
+===============
 [![Release](https://jitpack.io/v/LiveTex/sdk-android.svg)](https://jitpack.io/#LiveTex/sdk-android)
 
 В build.gradle (который в корне проекта) добавить репозиторий jitpack
@@ -21,19 +22,106 @@ Android SDK и демо-приложение для нового VisitorAPI
 	        implementation 'com.github.LiveTex:sdk-android:x.y'
 	}
 
-**Настройка**
-
+Настройка
+=========
 Для начала нужно инициализировать обьект LiveTex.
-Делается это в Application классе
+Делается это обычно в Application классе
 ([например App.java](demo/src/main/java/ru/livetex/demoapp/App.java)).
 
 `		new LiveTex.Builder(Const.TOUCHPOINT).build();`
 
-Укажите Touchpoint
-(берется в личном кабинете)
+Укажите Touchpoint (берется в личном кабинете).
 
-**Использование**
+Далее можно обращаться к синглтону через LiveTex.getInstance().
 
-Пример базового использования библиотеки можно посмотреть в
+**Пуши**
+
+В демо приложении есть пример того, как подключить пуши и передать токен в LiveTex.
+Для подключения пушей нужно сначала подключить Firebase Messaging Service по [их стандартной инструкции](https://firebase.google.com/docs/cloud-messaging/android/client).
+С помощью функции FirebaseInstanceId.getInstance().getInstanceId() нужно зарегистрировать устройство в Firebase и получить в ответ device token, который в свою очередь нужно передать в конструктор LiveTex.
+
+	public Completable init() {
+		return Completable.create(emitter -> {
+			FirebaseInstanceId.getInstance().getInstanceId()
+					.addOnCompleteListener(task -> {
+						if (!task.isSuccessful()) {
+							Log.w(TAG, "getInstanceId failed", task.getException());
+							initLiveTex();
+							emitter.onComplete();
+							return;
+						}
+
+						String token = task.getResult().getToken();
+						Log.i(TAG, "firebase token = " + token);
+
+						initLiveTex();
+						emitter.onComplete();
+					});
+		});
+	}
+
+	private void initLiveTex() {
+		new LiveTex.Builder(Const.TOUCHPOINT)
+				.setDeviceToken(FirebaseInstanceId.getInstance().getToken())
+				.build();
+	}
+
+Использование
+=============
+
+Пример использования библиотеки можно посмотреть в полноценном
 [демо приложении](demo/).
 
+**Основные классы**
+
+[LiveTex](sdk/src/main/java/ru/livetex/sdk/LiveTex.java) - класс для настройки и получения доступа к компонентам.
+
+[NetworkManager](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java) - класс для работы с сетевым операциями, в том числе авторизация и подключение к вебосокету чата.
+
+[LiveTexMessagesHandler](sdk/src/main/java/ru/livetex/sdk/logic/LiveTexMessagesHandler.java) - класс для работы с логикой общения по вебсокету. Обработка входящих и исходящих событий от клиента.
+
+**Авторизация и подключение**
+
+Для авторизации и подключения используется один метод [NetworkManager.connect()](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java). В него передается параметры userToken и authTokenType.
+
+userToken - токен (id) пользователя (который получили раньше или null если первая авторизация). Если у вас в системе уже есть сущность пользователя с неким айди, можете использовать его с соответствующим authTokenType;
+
+authTokenType - тип авторизации, обычный (LiveTex система токенов) или кастомный (ваша система токенов).
+
+В ответ система выдаст токен (сгенерирует если вы подали null или тот же самый с которым вы зашли). Если вы пользуетесь своей системой токенов, можете игнорировать ответ.
+
+Для того, чтобы отключиться (и отключить автоматическое восстановление вебсокета) используйте метод forceDisconnect().
+
+**События в чате**
+
+Вся логика чата построена на обмене событиями (которые проходят по вебсокету) в классе [LiveTexMessagesHandler](sdk/src/main/java/ru/livetex/sdk/logic/LiveTexMessagesHandler.java)
+
+**Входящие события**
+
+Со стороны экрана чата нужно подписаться на входящие события (пример есть в [ChatViewModel.subscribe())](demo/src/main/java/ru/livetex/demoapp/ui/chat/ChatViewModel.java)
+
+dialogStateUpdate() - обновление состояния диалога (здесь есть информация об операторе)
+
+historyUpdate() - обновление истории диалога. Представляет собой отрезок сообщений, то есть могут прийти как и следующие сообщения, так и прошлые (при запросе предыдущей истории соответственно).
+
+attributesRequest() - событие запроса аттрибутов. Для корректной логики на него **обязательно** нужно ответить sendAttributes().
+
+departmentRequest() - событие запроса департамента (комнаты чата). Для корректной логики на него **обязательно** нужно ответить sendDepartmentSelectionEvent().
+
+employeeTyping() - событие набора текста оператором.
+
+**Исходящие события**
+
+sendTextMessage(text) - отправка обычного текстового сообщения.
+
+sendFileMessage(FileUploadedResponse) - отправка файла (картинка, документ и прочее). Перед отправкой файл нужно загрузить через ApiManager (смотрите пример в [ChatViewModel.sendFileMessage())](demo/src/main/java/ru/livetex/demoapp/ui/chat/ChatViewModel.java))
+
+sendRatingEvent(isPositiveFeedback) - оценка качества диалога.
+
+sendDepartmentSelectionEvent(departmentId) - выбор департамента (команты чата), ответ на departmentRequest().
+
+sendAttributes(...) - отправка свойств пользователя, ответ на attributesRequest(). Набор обязательных и опциональных полей зависит от проекта.
+
+sendTypingEvent(text) - отправка уведомления о том, что пользователь печатает текст.
+
+getHistory(messageId) - получение предыстории сообщений, которые идут до указанного. Ответ придет в historyUpdate(), но здесь в подписке вы получите количество предыдущих сообщений. 0 означает что все сообщения загружены.

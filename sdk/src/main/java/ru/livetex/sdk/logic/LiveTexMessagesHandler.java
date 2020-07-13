@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
@@ -111,6 +113,9 @@ public class LiveTexMessagesHandler {
 		}
 	}
 
+	/**
+	 * Only if you need custom entity mapper
+	 */
 	public void setMapper(EntityMapper mapper) {
 		this.mapper = mapper;
 	}
@@ -145,12 +150,19 @@ public class LiveTexMessagesHandler {
 		}
 	}
 
-	public void sendTypingEvent(String text) {
+	/**
+	 * Send event about user types text message.
+	 */
+	public void sendTypingEvent(@NonNull String text) {
 		TypingEvent event = new TypingEvent(text);
 		String json = EntityMapper.gson.toJson(event);
 		sendJson(json);
 	}
 
+	/**
+	 * Send answer to attributesRequest event.
+	 * @param attrs - custom attributes if required by your project.
+	 */
 	public void sendAttributes(@Nullable String name,
 							   @Nullable String phone,
 							   @Nullable String email,
@@ -160,6 +172,9 @@ public class LiveTexMessagesHandler {
 		sendJson(json);
 	}
 
+	/**
+	 * Send feedback about dialog quality.
+	 */
 	public void sendRatingEvent(boolean isPositiveFeedback) {
 		RatingEvent event = new RatingEvent(isPositiveFeedback ? "1" : "0");
 		String json = EntityMapper.gson.toJson(event);
@@ -178,36 +193,58 @@ public class LiveTexMessagesHandler {
 		return sendAndSubscribe(json, event.correlationId);
 	}
 
+	/**
+	 * Send answer to departmentRequest event.
+	 * @param departmentId - id of chosen department.
+	 */
 	public Single<ResponseEntity> sendDepartmentSelectionEvent(String departmentId) {
 		Department event = new Department(departmentId);
 		String json = EntityMapper.gson.toJson(event);
 		return sendAndSubscribe(json, event.correlationId);
 	}
 
-	public PublishSubject<BaseEntity> entity() {
+	/**
+	 * Generic subscription for custom usage.
+	 */
+	public Observable<BaseEntity> entity() {
 		return entitySubject;
 	}
 
-	public PublishSubject<DialogState> dialogStateUpdate() {
+	/**
+	 * Event when server sends current dialog state
+	 */
+	public Observable<DialogState> dialogStateUpdate() {
 		return dialogStateSubject;
 	}
 
 	/**
-	 * Enitity which contains some part of chat messaging history. It can be newer or older messages.
+	 * Event when server sends chat history.
+	 * HistoryEntity contains some part of chat messaging history. It can be newer or older messages.
 	 */
-	public PublishSubject<HistoryEntity> historyUpdate() {
+	public Observable<HistoryEntity> historyUpdate() {
 		return historyUpdateSubject;
 	}
 
-	public PublishSubject<EmployeeTypingEvent> employeeTyping() {
+	/**
+	 * Event when operator types message to user. It will come several times as the operator types the text, once every few seconds
+	 */
+	public Observable<EmployeeTypingEvent> employeeTyping() {
 		return employeeTypingSubject;
 	}
 
-	public PublishSubject<AttributesRequest> attributesRequest() {
+	/**
+	 * Event when server decides to get attributes from user.
+	 * You MUST answer on it with sendAttributes() for correct flow!
+	 */
+	public Observable<AttributesRequest> attributesRequest() {
 		return attributesRequestSubject;
 	}
 
-	public PublishSubject<DepartmentRequestEntity> departmentRequest() {
+	/**
+	 * Event when server decides to get choose of chat department (room) from user.
+	 * You MUST answer on it with sendDepartmentSelectionEvent() for correct flow!
+	 */
+	public Observable<DepartmentRequestEntity> departmentRequest() {
 		return departmentRequestSubject;
 	}
 

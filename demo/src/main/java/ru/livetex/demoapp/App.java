@@ -20,7 +20,8 @@ public class App extends Application {
 		instance = this;
 		// For immediately working pushes LiveTex instance should be initialized after Firebase getInstanceId() finishes, it can take some time.
 		// Chat can't be used until LiveTex instance create.
-		// If you don't care, just call initLiveTex() here.
+		// If you don't care about pushes init, just uncomment initLiveTex() here and don't use init().
+		// initLiveTex();
 	}
 
 	public static App getInstance() {

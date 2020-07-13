@@ -272,7 +272,7 @@ public final class ChatViewModel extends ViewModel {
 
 	private void sendFileMessage(@NonNull ChatMessage chatMessage) {
 		File f = new File(chatMessage.fileUrl);
-		Disposable d = NetworkManager.getInstance().getApiManager().uploadFile(f)
+		Disposable d = networkManager.getApiManager().uploadFile(f)
 				.subscribeOn(Schedulers.io())
 				.observeOn(Schedulers.io())
 				.doOnSubscribe(ignore -> {
