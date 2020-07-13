@@ -38,7 +38,9 @@ Android SDK и демо-приложение для нового VisitorAPI
 
 В демо приложении есть пример того, как подключить пуши и передать токен в LiveTex.
 Для подключения пушей нужно сначала подключить Firebase Messaging Service по [их стандартной инструкции](https://firebase.google.com/docs/cloud-messaging/android/client).
-С помощью функции FirebaseInstanceId.getInstance().getInstanceId() нужно зарегистрировать устройство в Firebase и получить в ответ device token, который в свою очередь нужно передать в конструктор LiveTex.
+С помощью функции FirebaseInstanceId.getInstance().getInstanceId() нужно зарегистрировать устройство в Firebase и получить в ответ device token, который в свою очередь нужно передать в билдер LiveTex. Это несинхронная операция которая требует какое-то время, поэтому функция реактивная.
+
+**Важно** - функция initLiveTex() должна быть вызвана до использования класса LiveTex. Поэтому инициализировать его в случае с Firebase стоит заранее (в [SplashActivity](demo/src/main/java/ru/livetex/demoapp/ui/splash/SplashActivity.java) например).
 
 	public Completable init() {
 		return Completable.create(emitter -> {
