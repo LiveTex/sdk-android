@@ -25,7 +25,7 @@ public final class FileMessage extends BaseEntity implements GenericMessage {
 		this.name = response.name;
 		this.url = response.url;
 		this.createdAt = new Date();
-		this.creator = new User();
+		this.creator = new Visitor();
 	}
 
 	@Override

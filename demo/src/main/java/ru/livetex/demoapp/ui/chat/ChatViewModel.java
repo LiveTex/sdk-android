@@ -309,13 +309,13 @@ public final class ChatViewModel extends ViewModel {
 	}
 
 	private void connect() {
-		String userToken = sp.getString(Const.KEY_USER_TOKEN, null);
+		String visitorToken = sp.getString(Const.KEY_VISITOR_TOKEN, null);
 
-		disposables.add(networkManager.connect(userToken, AuthTokenType.DEFAULT)
+		disposables.add(networkManager.connect(visitorToken, AuthTokenType.DEFAULT)
 				.subscribeOn(Schedulers.io())
 				.observeOn(Schedulers.io())
-				.subscribe(userIdReceived -> {
-					sp.edit().putString(Const.KEY_USER_TOKEN, userIdReceived).apply();
+				.subscribe(visitorTokenReceived -> {
+					sp.edit().putString(Const.KEY_VISITOR_TOKEN, visitorTokenReceived).apply();
 				}, e -> {
 					Log.e(TAG, "connect", e);
 					errorLiveData.postValue("Ошибка соединения " + e.getMessage());

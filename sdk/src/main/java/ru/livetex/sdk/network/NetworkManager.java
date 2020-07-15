@@ -52,7 +52,7 @@ public final class NetworkManager {
 	@Nullable
 	private final String deviceType;
 	@Nullable
-	private String lastUserToken = null;
+	private String lastVisitorToken = null;
 	@Nullable
 	private WebSocket webSocket = null;
 	private boolean needReconnect = true;
@@ -64,7 +64,7 @@ public final class NetworkManager {
 						   @Nullable String deviceToken,
 						   @Nullable String deviceType) {
 		this.authHost = "https://" + host + "v1/";
-		this.wsEndpoint = "wss://" + host + "v1/ws/{userToken}";
+		this.wsEndpoint = "wss://" + host + "v1/ws/{visitorToken}";
 		this.uploadEndpoint = "https://" + host + "v1/upload";
 		this.touchpoint = touchpoint;
 		this.deviceToken = deviceToken;
@@ -113,22 +113,23 @@ public final class NetworkManager {
 
 	/**
 	 * Do authorization and connect to chat websocket.
-	 * @param userToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
+	 * @param visitorToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
 	 * @param authTokenType - AuthTokenType.DEFAULT for standard (LiveTex) token system.
+	 * @return new ly generated visitorToken if param was null, or same visitorToken which was provided
 	 */
-	public Single<String> connect(@Nullable String userToken, AuthTokenType authTokenType) {
+	public Single<String> connect(@Nullable String visitorToken, AuthTokenType authTokenType) {
 		return Single.fromCallable(() -> {
 			switch (authTokenType) {
 				case DEFAULT:
-					lastUserToken = auth(touchpoint, userToken, deviceToken, deviceType, null);
+					lastVisitorToken = auth(touchpoint, visitorToken, deviceToken, deviceType, null);
 					break;
 				case CUSTOM:
-					lastUserToken = auth(touchpoint, null, deviceToken, deviceType, userToken);
+					lastVisitorToken = auth(touchpoint, null, deviceToken, deviceType, visitorToken);
 					break;
 			}
 
 			connectWebSocket();
-			return lastUserToken;
+			return lastVisitorToken;
 		});
 	}
 
@@ -157,13 +158,13 @@ public final class NetworkManager {
 			Log.e(TAG, "Connect: websocket is active!");
 			return;
 		}
-		if (lastUserToken == null) {
-			Log.e(TAG, "Connect: client token is null");
+		if (lastVisitorToken == null) {
+			Log.e(TAG, "Connect: visitor token is null");
 			return;
 		}
 		connectionStateSubject.onNext(ConnectionState.CONNECTING);
 
-		String url = wsEndpoint.replace("{userToken}", lastUserToken);
+		String url = wsEndpoint.replace("{visitorToken}", lastVisitorToken);
 
 		Request request = new Request.Builder()
 				.url(url)
@@ -172,19 +173,19 @@ public final class NetworkManager {
 	}
 
 	private String auth(@NonNull String touchpoint,
-						@Nullable String userToken,
+						@Nullable String visitorToken,
 						@Nullable String deviceToken,
 						@Nullable String deviceType,
-						@Nullable String customUserToken) throws IOException {
+						@Nullable String customVisitorToken) throws IOException {
 		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
 				.newBuilder()
 				.addQueryParameter("touchPoint", touchpoint);
 
-		if (!TextUtils.isEmpty(userToken)) {
-			urlBuilder.addQueryParameter("userToken", userToken);
+		if (!TextUtils.isEmpty(visitorToken)) {
+			urlBuilder.addQueryParameter("visitorToken", visitorToken);
 		}
-		if (!TextUtils.isEmpty(customUserToken)) {
-			urlBuilder.addQueryParameter("customUserToken", customUserToken);
+		if (!TextUtils.isEmpty(customVisitorToken)) {
+			urlBuilder.addQueryParameter("customVisitorToken", customVisitorToken);
 		}
 		if (!TextUtils.isEmpty(deviceToken)) {
 			urlBuilder.addQueryParameter("deviceToken", deviceToken);
@@ -206,7 +207,7 @@ public final class NetworkManager {
 		if (!TextUtils.isEmpty(responseEntity.endpoints.upload)) {
 			uploadEndpoint = responseEntity.endpoints.upload;
 		}
-		return responseEntity.userToken;
+		return responseEntity.visitorToken;
 	}
 
 	private void subscribeToWebsocket() {

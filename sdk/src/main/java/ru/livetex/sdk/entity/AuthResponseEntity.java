@@ -6,7 +6,7 @@ public final class AuthResponseEntity {
 	public static final String TYPE = "attributes";
 
 	@NonNull
-	public String userToken;
+	public String visitorToken;
 	@NonNull
 	public Endpoints endpoints;
 

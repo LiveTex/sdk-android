@@ -80,13 +80,13 @@ Android SDK и демо-приложение для нового VisitorAPI
 
 [NetworkManager](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java) - класс для работы с сетевым операциями, в том числе авторизация и подключение к вебосокету чата.
 
-[LiveTexMessagesHandler](sdk/src/main/java/ru/livetex/sdk/logic/LiveTexMessagesHandler.java) - класс для работы с логикой общения по вебсокету. Обработка входящих и исходящих событий от клиента.
+[LiveTexMessagesHandler](sdk/src/main/java/ru/livetex/sdk/logic/LiveTexMessagesHandler.java) - класс для работы с логикой общения по вебсокету. Обработка входящих и исходящих событий.
 
 **Авторизация и подключение**
 
-Для авторизации и подключения используется один метод [NetworkManager.connect()](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java). В него передается параметры userToken и authTokenType.
+Для авторизации и подключения используется один метод [NetworkManager.connect()](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java). В него передается параметры visitorToken и authTokenType.
 
-userToken - токен (id) пользователя (который получили раньше или null если первая авторизация). Если у вас в системе уже есть сущность пользователя с неким айди, можете использовать его с соответствующим authTokenType;
+visitorToken - токен (id) пользователя (который получили раньше или null если первая авторизация). Если у вас в системе уже есть сущность пользователя с неким айди, можете использовать его с соответствующим authTokenType;
 
 authTokenType - тип авторизации, обычный (LiveTex система токенов) или кастомный (ваша система токенов).
 

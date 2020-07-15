@@ -6,7 +6,7 @@ import java.util.Objects;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import ru.livetex.sdk.entity.Creator;
-import ru.livetex.sdk.entity.User;
+import ru.livetex.sdk.entity.Visitor;
 
 public final class ChatMessage implements Comparable<ChatMessage> {
 	// Special case for displaying "employee typing" message
@@ -34,7 +34,7 @@ public final class ChatMessage implements Comparable<ChatMessage> {
 		this.isIncoming = false;
 		this.sentState = MessageSentState.NOT_SENT;
 		this.fileUrl = null;
-		this.creator = new User();
+		this.creator = new Visitor();
 	}
 
 	// mapped from server text entity

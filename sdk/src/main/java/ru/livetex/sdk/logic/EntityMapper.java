@@ -28,7 +28,7 @@ import ru.livetex.sdk.entity.ResponseEntity;
 import ru.livetex.sdk.entity.SystemUser;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.entity.TypingEvent;
-import ru.livetex.sdk.entity.User;
+import ru.livetex.sdk.entity.Visitor;
 
 public class EntityMapper {
 	private static final String TAG = "EntityMapper";
@@ -143,8 +143,8 @@ public class EntityMapper {
 					message.setCreator(gson.fromJson(creatorObject, Employee.class));
 					break;
 				}
-				case User.TYPE: {
-					message.setCreator(gson.fromJson(creator, User.class));
+				case Visitor.TYPE: {
+					message.setCreator(gson.fromJson(creator, Visitor.class));
 					break;
 				}
 				case SystemUser.TYPE: {
