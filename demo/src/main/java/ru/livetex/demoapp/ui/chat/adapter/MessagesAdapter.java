@@ -27,6 +27,7 @@ import com.bumptech.glide.request.transition.Transition;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.functions.Consumer;
 import ru.livetex.demoapp.R;
@@ -500,17 +501,23 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		}
 
 		// todo: double check should be on read state
+		Drawable drawable = null;
+		int dSize = timeView.getResources().getDimensionPixelOffset(R.dimen.chat_message_indicator_size);
 		switch (message.sentState) {
 			case NOT_SENT:
 			case SENDING:
-				timeView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.check, 0, 0, 0);
+				drawable = ContextCompat.getDrawable(timeView.getContext(), R.drawable.check);
 				break;
 			case SENT:
-				timeView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.double_check, 0, 0, 0);
+				drawable = ContextCompat.getDrawable(timeView.getContext(), R.drawable.double_check);
 				break;
 			case FAILED:
-				timeView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.alert, 0, 0, 0);
+				drawable = ContextCompat.getDrawable(timeView.getContext(), R.drawable.alert);
 				break;
+		}
+		if (drawable != null) {
+			drawable.setBounds(0, 0, dSize, dSize);
+			timeView.setCompoundDrawables(drawable, null, null, null);
 		}
 	}
 
