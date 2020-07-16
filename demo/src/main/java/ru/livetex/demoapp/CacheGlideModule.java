@@ -19,7 +19,7 @@ public class CacheGlideModule extends AppGlideModule {
 
     @Override
     public void applyOptions(@androidx.annotation.NonNull Context context, @androidx.annotation.NonNull GlideBuilder builder) {
-        long diskCacheSizeBytes = 10L * 1024L * 1024L; // 10 MB
+        long diskCacheSizeBytes = 50L * 1024L * 1024L; // 50 MB
         builder.setDiskCache(new InternalCacheDiskCacheFactory(context, diskCacheSizeBytes));
         builder.setLogLevel(Log.ERROR);
         builder.setDefaultRequestOptions(
