@@ -6,6 +6,7 @@ import java.util.Objects;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import ru.livetex.sdk.entity.Creator;
+import ru.livetex.sdk.entity.KeyboardEntity;
 import ru.livetex.sdk.entity.Visitor;
 
 public final class ChatMessage implements Comparable<ChatMessage> {
@@ -20,6 +21,8 @@ public final class ChatMessage implements Comparable<ChatMessage> {
 	public Date createdAt; // timestamp in millis
 	@NonNull
 	public final Creator creator;
+	@Nullable
+	public final KeyboardEntity keyboard;
 
 	@Nullable
 	public final String fileUrl; // in case of "file" message
@@ -35,15 +38,27 @@ public final class ChatMessage implements Comparable<ChatMessage> {
 		this.sentState = MessageSentState.NOT_SENT;
 		this.fileUrl = null;
 		this.creator = new Visitor();
+		this.keyboard = null;
 	}
 
 	// mapped from server text entity
-	public ChatMessage(@NonNull String id, @NonNull String content, @NonNull Date createdAt, boolean isIncoming, Creator creator) {
-		this(id, content, createdAt, isIncoming, null, creator);
+	public ChatMessage(@NonNull String id,
+					   @NonNull String content,
+					   @NonNull Date createdAt,
+					   boolean isIncoming,
+					   @NonNull Creator creator,
+					   @Nullable KeyboardEntity keyboard) {
+		this(id, content, createdAt, isIncoming, null, creator, keyboard);
 	}
 
 	// mapped from server file entity
-	public ChatMessage(@NonNull String id, @NonNull String content, @NonNull Date createdAt, boolean isIncoming, @Nullable String fileUrl, @NonNull Creator creator) {
+	public ChatMessage(@NonNull String id,
+					   @NonNull String content,
+					   @NonNull Date createdAt,
+					   boolean isIncoming,
+					   @Nullable String fileUrl,
+					   @NonNull Creator creator,
+					   @Nullable KeyboardEntity keyboard) {
 		this.id = id;
 		this.content = content;
 		this.createdAt = createdAt;
@@ -51,6 +66,7 @@ public final class ChatMessage implements Comparable<ChatMessage> {
 		this.sentState = MessageSentState.SENT;
 		this.fileUrl = fileUrl;
 		this.creator = creator;
+		this.keyboard = keyboard;
 	}
 
 	public void setSentState(MessageSentState sentState) {
@@ -71,12 +87,13 @@ public final class ChatMessage implements Comparable<ChatMessage> {
 				content.equals(that.content) &&
 				createdAt.equals(that.createdAt) &&
 				sentState == that.sentState &&
-				creator == that.creator;
+				creator == that.creator &&
+				keyboard == that.keyboard;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, content, createdAt, isIncoming, sentState, creator);
+		return Objects.hash(id, content, createdAt, isIncoming, sentState, creator, keyboard);
 	}
 
 	@Override

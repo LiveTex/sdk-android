@@ -16,6 +16,7 @@ import com.google.gson.JsonParseException;
 import ru.livetex.sdk.entity.AttributesEntity;
 import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
+import ru.livetex.sdk.entity.Bot;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
@@ -149,6 +150,10 @@ public class EntityMapper {
 				}
 				case SystemUser.TYPE: {
 					message.setCreator(gson.fromJson(creator, SystemUser.class));
+					break;
+				}
+				case Bot.TYPE: {
+					message.setCreator(gson.fromJson(creator, Bot.class));
 					break;
 				}
 			}

@@ -73,7 +73,7 @@ public class ChatActivity extends AppCompatActivity {
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private final RxPermissions rxPermissions = new RxPermissions(this);
 	private ChatViewModel viewModel;
-	private final MessagesAdapter adapter = new MessagesAdapter();
+	private final MessagesAdapter adapter = new MessagesAdapter(button -> viewModel.onMessageActionButtonClicked(button));
 	private AddFileDialog addFileDialog = null;
 
 	private final static long TEXT_TYPING_DELAY = 500L; // milliseconds
@@ -347,6 +347,10 @@ public class ChatActivity extends AppCompatActivity {
 	private void setupInput() {
 		// --- Chat input
 		sendView.setOnClickListener(v -> {
+			if (!viewModel.inputEnabled) {
+				Toast.makeText(this, "Отправка сейчас недоступна", Toast.LENGTH_SHORT).show();
+				return;
+			}
 			// Send file or message
 			if (viewModel.selectedFile != null) {
 				String path = FileUtils.getRealPathFromUri(this, viewModel.selectedFile);
@@ -367,6 +371,10 @@ public class ChatActivity extends AppCompatActivity {
 		});
 
 		addView.setOnClickListener(v -> {
+			if (!viewModel.inputEnabled) {
+				Toast.makeText(this, "Отправка файлов сейчас недоступна", Toast.LENGTH_SHORT).show();
+				return;
+			}
 			InputUtils.hideKeyboard(this);
 			disposables.add(rxPermissions
 					.request(Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -426,14 +434,17 @@ public class ChatActivity extends AppCompatActivity {
 			return;
 		}
 
-		// Unset visibility changes
-		inputFieldContainerView.setBackground(null);
-		inputView.setEnabled(true);
+		// Set default state at first
+		inputFieldContainerView.setBackgroundResource(viewModel.inputEnabled ? 0 : R.drawable.bg_input_field_container_disabled);
+		inputView.setEnabled(viewModel.inputEnabled);
+		addView.setEnabled(viewModel.inputEnabled);
+		sendView.setEnabled(viewModel.inputEnabled);
 		quoteContainerView.setVisibility(View.GONE);
 		filePreviewView.setVisibility(View.GONE);
 		filePreviewDeleteView.setVisibility(View.GONE);
 		fileNameView.setVisibility(View.GONE);
 
+		// Apply specific state
 		switch (viewState) {
 			case NORMAL:
 				inputContainerView.setVisibility(View.VISIBLE);
@@ -443,7 +454,7 @@ public class ChatActivity extends AppCompatActivity {
 				break;
 			case SEND_FILE_PREVIEW:
 				// gray background
-				inputFieldContainerView.setBackgroundResource(R.drawable.bg_input_field_container);
+				inputFieldContainerView.setBackgroundResource(R.drawable.bg_input_field_container_disabled);
 				inputView.setEnabled(false);
 				// file preview img
 				filePreviewView.setVisibility(View.VISIBLE);
@@ -516,6 +527,10 @@ public class ChatActivity extends AppCompatActivity {
 			Toast.makeText(this, "Введите сообщение", Toast.LENGTH_SHORT).show();
 			return;
 		}
+		if (!viewModel.inputEnabled) {
+			Toast.makeText(this, "Отправка сообщений сейчас недоступна", Toast.LENGTH_SHORT).show();
+			return;
+		}
 
 		ChatMessage chatMessage = ChatState.instance.createNewTextMessage(text, viewModel.getQuoteText());
 		inputView.setText(null);
@@ -538,14 +553,12 @@ public class ChatActivity extends AppCompatActivity {
 	private void onConnectionStateUpdate(NetworkManager.ConnectionState connectionState) {
 		switch (connectionState) {
 			case DISCONNECTED: {
-				//Toast.makeText(this, "Вебсокет отключен", Toast.LENGTH_SHORT).show();
 				break;
 			}
 			case CONNECTING: {
 				break;
 			}
 			case CONNECTED: {
-				//Toast.makeText(this, "Вебсокет подключен", Toast.LENGTH_SHORT).show();
 				break;
 			}
 			default:

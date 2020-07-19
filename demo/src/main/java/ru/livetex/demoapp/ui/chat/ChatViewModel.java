@@ -19,11 +19,13 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import ru.livetex.demoapp.App;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.Mapper;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.db.entity.MessageSentState;
+import ru.livetex.demoapp.utils.IntentUtils;
 import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
@@ -31,6 +33,7 @@ import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
+import ru.livetex.sdk.entity.KeyboardEntity;
 import ru.livetex.sdk.entity.LiveTexError;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
@@ -54,6 +57,7 @@ public final class ChatViewModel extends ViewModel {
 
 	// File for upload
 	Uri selectedFile = null;
+	boolean inputEnabled = true;
 	private String quoteText = null;
 
 	public ChatViewModel(SharedPreferences sp) {
@@ -109,7 +113,14 @@ public final class ChatViewModel extends ViewModel {
 
 		disposables.add(messagesHandler.dialogStateUpdate()
 				.observeOn(Schedulers.io())
-				.subscribe(dialogStateUpdateLiveData::postValue, thr -> {
+				.subscribe(state -> {
+					boolean inputStateChanged = this.inputEnabled != state.inputEnabled;
+					if (inputStateChanged) {
+						this.inputEnabled = state.inputEnabled;
+						viewStateLiveData.postValue(viewStateLiveData.getValue());
+					}
+					dialogStateUpdateLiveData.postValue(state);
+				}, thr -> {
 					Log.e(TAG, "dialogStateUpdate", thr);
 				}));
 
@@ -247,6 +258,14 @@ public final class ChatViewModel extends ViewModel {
 		} else {
 			viewStateLiveData.setValue(ChatViewState.QUOTE);
 		}
+	}
+
+	public void onMessageActionButtonClicked(KeyboardEntity.Button button) {
+		if (!TextUtils.isEmpty(button.url)) {
+			IntentUtils.goUrl(App.getInstance(), button.url);
+		}
+
+		messagesHandler.sendButtonPressedEvent(button.payload);
 	}
 
 	private void updateHistory(HistoryEntity historyEntity) {
