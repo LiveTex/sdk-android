@@ -114,9 +114,9 @@ public final class ChatViewModel extends ViewModel {
 		disposables.add(messagesHandler.dialogStateUpdate()
 				.observeOn(Schedulers.io())
 				.subscribe(state -> {
-					boolean inputStateChanged = this.inputEnabled != state.inputEnabled;
+					boolean inputStateChanged = this.inputEnabled != state.isInputEnabled();
 					if (inputStateChanged) {
-						this.inputEnabled = state.inputEnabled;
+						this.inputEnabled = state.isInputEnabled();
 						viewStateLiveData.postValue(viewStateLiveData.getValue());
 					}
 					dialogStateUpdateLiveData.postValue(state);
@@ -261,11 +261,14 @@ public final class ChatViewModel extends ViewModel {
 	}
 
 	public void onMessageActionButtonClicked(KeyboardEntity.Button button) {
-		if (!TextUtils.isEmpty(button.url)) {
-			IntentUtils.goUrl(App.getInstance(), button.url);
-		}
-
 		messagesHandler.sendButtonPressedEvent(button.payload);
+
+		if (!TextUtils.isEmpty(button.url)) {
+			// Delay is for better visual UX
+			Disposable d = Completable.timer(300, TimeUnit.MILLISECONDS)
+					.observeOn(AndroidSchedulers.mainThread())
+					.subscribe(() -> IntentUtils.goUrl(App.getInstance(), button.url));
+		}
 	}
 
 	private void updateHistory(HistoryEntity historyEntity) {

@@ -315,7 +315,7 @@ public class ChatActivity extends AppCompatActivity {
 		List<AdapterItem> items = new ArrayList<>();
 		List<String> days = new ArrayList<>();
 		LinearLayoutManager layoutManager = (LinearLayoutManager) messagesView.getLayoutManager();
-		boolean isLastMessageVisible = adapter.getItemCount() > 0 && layoutManager.findLastVisibleItemPosition() == adapter.getItemCount() - 1;
+		boolean isLastMessageVisible = adapter.getItemCount() > 0 && layoutManager.findLastVisibleItemPosition() == adapter.getMessagesCount() - 1;
 
 		for (ChatMessage chatMessage : chatMessages) {
 			String dayDate = DateUtils.dateToDay(chatMessage.createdAt);
@@ -340,7 +340,8 @@ public class ChatActivity extends AppCompatActivity {
 		diffResult.dispatchUpdatesTo(adapter);
 
 		if (isLastMessageVisible && adapter.getItemCount() > 0) {
-			messagesView.smoothScrollToPosition(adapter.getItemCount() - 1);
+			// post() allows to scroll when child layout phase is done and sizes are proper.
+			messagesView.post(() -> messagesView.smoothScrollToPosition(adapter.getItemCount() - 1));
 		}
 	}
 

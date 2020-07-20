@@ -51,6 +51,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static final int VIEW_TYPE_EMPLOYEE_TYPING = 9;
 
 	private List<AdapterItem> items = new ArrayList<>();
+	private int messagesCount = 0;
 	@Nullable
 	private Consumer<ChatItem> onMessageClickListener = null;
 	@Nullable
@@ -206,6 +207,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		return items.size();
 	}
 
+	public int getMessagesCount() {
+		return messagesCount;
+	}
+
 	public List<AdapterItem> getData() {
 		return items;
 	}
@@ -213,6 +218,13 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	public void setData(List<AdapterItem> chatMessages) {
 		this.items.clear();
 		this.items.addAll(chatMessages);
+
+		messagesCount = 0;
+		for (AdapterItem adapterItem : chatMessages) {
+			if (adapterItem.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
+				messagesCount++;
+			}
+		}
 	}
 
 	public void setOnMessageClickListener(@NonNull Consumer<ChatItem> onMessageClickListener) {

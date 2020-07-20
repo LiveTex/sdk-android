@@ -1,5 +1,7 @@
 package ru.livetex.sdk.entity;
 
+import java.util.Objects;
+
 import com.google.gson.annotations.SerializedName;
 
 import androidx.annotation.NonNull;
@@ -13,9 +15,10 @@ public final class DialogState extends BaseEntity {
 	@NonNull
 	public EmployeeStatus employeeStatus = EmployeeStatus.OFFLINE;
 	@Nullable
-	public Employee employee;
+	public Employee employee = null;
 	// Indicates when chat input UI should be shown or hidden/disabled. When false, user shouldn't be able to send text or file messages.
-	public boolean inputEnabled;
+	@Nullable
+	Boolean inputEnabled = null;
 
 	public enum DialogStatus {
 		@SerializedName("unassigned")
@@ -33,6 +36,10 @@ public final class DialogState extends BaseEntity {
 		ONLINE,
 		@SerializedName("offline")
 		OFFLINE
+	}
+
+	public boolean isInputEnabled() {
+		return !Objects.equals(inputEnabled, false);
 	}
 
 	@Override
