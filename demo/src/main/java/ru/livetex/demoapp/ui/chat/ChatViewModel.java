@@ -18,6 +18,7 @@ import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import ru.livetex.demoapp.App;
 import ru.livetex.demoapp.Const;
@@ -363,7 +364,13 @@ public final class ChatViewModel extends ViewModel {
 	}
 
 	public void sendFeedback(boolean isPositive) {
-		messagesHandler.sendRatingEvent(isPositive);
+		Disposable d = Completable.fromAction(() -> messagesHandler.sendRatingEvent(isPositive))
+				.subscribeOn(Schedulers.io())
+				.observeOn(Schedulers.io())
+				.subscribe(Functions.EMPTY_ACTION, e -> {
+					Log.e(TAG, "sendFeedback", e);
+				});
+		disposables.add(d);
 	}
 
 	public void onResume() {

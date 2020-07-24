@@ -1,6 +1,7 @@
 # Android mobile SDK and demo app
 LiveTex Mobile SDK предоставляет набор инструментов для организации консультирования пользователей мобильных приложений.  
-Механизм взаимодействия с сервером основывается на новом Visitor API.
+
+Механизм взаимодействия с сервером основывается на новом [Visitor API](https://support.livetex.ru/hc/ru/articles/360010723098-Visitor-API).
 
 **Демо**
 
@@ -15,20 +16,24 @@ LiveTex Mobile SDK предоставляет набор инструменто�
 
 В build.gradle (который в корне проекта) добавить репозиторий jitpack
 
-	allprojects {
-		repositories {
-			...
-			maven { url 'https://jitpack.io' }
-		}
+```gradle
+allprojects {
+	repositories {
+		...
+		maven { url 'https://jitpack.io' }
 	}
+}
+```
 
 В build.gradle (который в модуле приложения) добавить зависимость SDK
 актуальной версии (см.
 [Releases](https://github.com/LiveTex/sdk-android/releases))
 
-	dependencies {
-	        implementation 'com.github.LiveTex:sdk-android:x.y'
-	}
+```gradle
+dependencies {
+	implementation 'com.github.LiveTex:sdk-android:x.y'
+}
+```
 
 Настройка
 =========
@@ -36,45 +41,49 @@ LiveTex Mobile SDK предоставляет набор инструменто�
 Делается это обычно в Application классе
 ([например App.java](demo/src/main/java/ru/livetex/demoapp/App.java)).
 
-`		new LiveTex.Builder(Const.TOUCHPOINT).build();`
+```java
+new LiveTex.Builder(Const.TOUCHPOINT).build();
+```
 
 Укажите Touchpoint (берется в личном кабинете).
 
-Далее можно обращаться к синглтону через LiveTex.getInstance().
+Далее можно обращаться к синглтону через `LiveTex.getInstance()`.
 
 **Пуши**
 
 В демо приложении есть пример того, как подключить пуши и передать токен в LiveTex.
 Для подключения пушей нужно сначала подключить Firebase Messaging Service по [их стандартной инструкции](https://firebase.google.com/docs/cloud-messaging/android/client).
-С помощью функции FirebaseInstanceId.getInstance().getInstanceId() нужно зарегистрировать устройство в Firebase и получить в ответ device token, который в свою очередь нужно передать в билдер LiveTex. Это несинхронная операция которая требует какое-то время, поэтому функция реактивная.
+С помощью функции `FirebaseInstanceId.getInstance().getInstanceId()` нужно зарегистрировать устройство в Firebase и получить в ответ device token, который в свою очередь нужно передать в билдер LiveTex. Это несинхронная операция которая требует какое-то время, поэтому функция реактивная.
 
-**Важно** - функция initLiveTex() должна быть вызвана до использования класса LiveTex. Поэтому инициализировать его в случае с Firebase стоит заранее (в [SplashActivity](demo/src/main/java/ru/livetex/demoapp/ui/splash/SplashActivity.java) например).
+**Важно** - функция `initLiveTex()` должна быть вызвана до использования класса LiveTex. Поэтому инициализировать его в случае с Firebase стоит заранее (в [SplashActivity](demo/src/main/java/ru/livetex/demoapp/ui/splash/SplashActivity.java) например).
 
-	public Completable init() {
-		return Completable.create(emitter -> {
-			FirebaseInstanceId.getInstance().getInstanceId()
-					.addOnCompleteListener(task -> {
-						if (!task.isSuccessful()) {
-							Log.w(TAG, "getInstanceId failed", task.getException());
-							initLiveTex();
-							emitter.onComplete();
-							return;
-						}
-
-						String token = task.getResult().getToken();
-						Log.i(TAG, "firebase token = " + token);
-
+```java
+public Completable init() {
+	return Completable.create(emitter -> {
+		FirebaseInstanceId.getInstance().getInstanceId()
+				.addOnCompleteListener(task -> {
+					if (!task.isSuccessful()) {
+						Log.w(TAG, "getInstanceId failed", task.getException());
 						initLiveTex();
 						emitter.onComplete();
-					});
-		});
-	}
+						return;
+					}
 
-	private void initLiveTex() {
-		new LiveTex.Builder(Const.TOUCHPOINT)
-				.setDeviceToken(FirebaseInstanceId.getInstance().getToken())
-				.build();
-	}
+					String token = task.getResult().getToken();
+					Log.i(TAG, "firebase token = " + token);
+
+					initLiveTex();
+					emitter.onComplete();
+				});
+	});
+}
+
+private void initLiveTex() {
+	new LiveTex.Builder(Const.TOUCHPOINT)
+			.setDeviceToken(FirebaseInstanceId.getInstance().getToken())
+			.build();
+}
+```
 
 Использование
 =============
@@ -83,7 +92,7 @@ LiveTex Mobile SDK предоставляет набор инструменто�
 
 [LiveTex](sdk/src/main/java/ru/livetex/sdk/LiveTex.java) - класс для настройки и получения доступа к компонентам.
 
-[NetworkManager](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java) - класс для работы с сетевым операциями, в том числе авторизация и подключение к вебосокету чата.
+[NetworkManager](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java) - класс для работы с сетевым операциями, в том числе авторизация и подключение к вебсокету чата.
 
 [LiveTexMessagesHandler](sdk/src/main/java/ru/livetex/sdk/logic/LiveTexMessagesHandler.java) - класс для работы с логикой общения по вебсокету. Обработка входящих и исходящих событий.
 
@@ -121,7 +130,7 @@ employeeTyping() - событие набора текста оператором
 
 sendTextMessage(text) - отправка обычного текстового сообщения.
 
-sendFileMessage(FileUploadedResponse) - отправка файла (картинка, документ и прочее). Перед отправкой файл нужно загрузить через ApiManager (смотрите пример в [ChatViewModel.sendFileMessage())](demo/src/main/java/ru/livetex/demoapp/ui/chat/ChatViewModel.java))
+sendFileMessage(FileUploadedResponse) - отправка файла (картинка, документ и прочее). Перед отправкой файл нужно загрузить через ApiManager (смотрите пример в [ChatViewModel.sendFileMessage()](demo/src/main/java/ru/livetex/demoapp/ui/chat/ChatViewModel.java))
 
 sendRatingEvent(isPositiveFeedback) - оценка качества диалога.
 
