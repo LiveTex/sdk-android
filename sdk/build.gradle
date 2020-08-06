@@ -44,7 +44,7 @@ dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 	// androidx
-	implementation 'androidx.appcompat:appcompat:1.1.0'
+	implementation "androidx.annotation:annotation:1.1.0"
 	// network
 	implementation 'com.squareup.okhttp3:okhttp:3.14.7'
 	implementation 'com.squareup.okhttp3:logging-interceptor:3.14.7'
