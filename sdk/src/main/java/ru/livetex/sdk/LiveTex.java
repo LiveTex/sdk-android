@@ -39,7 +39,7 @@ public final class LiveTex {
 
 	public static class Builder {
 		@NonNull
-		private String host = "visitor-api-04.livetex.ru/";
+		private String host = "visitor-api.livetex.ru/";
 		@NonNull
 		private final String touchpoint;
 		@Nullable
