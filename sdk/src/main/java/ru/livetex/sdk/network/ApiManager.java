@@ -22,13 +22,26 @@ import ru.livetex.sdk.entity.FileUploadedResponse;
 public final class ApiManager {
 
 	private final OkHttpManager okHttpManager;
+	private String authToken = null;
 
 	ApiManager(OkHttpManager okHttpManager) {
 		this.okHttpManager = okHttpManager;
 	}
 
+	/**
+	 * Normally called by okHttpManager
+	 */
+	public void setAuthToken(String authToken) {
+		this.authToken = authToken;
+	}
+
 	public Single<FileUploadedResponse> uploadFile(File file) {
 		return Single.create(emitter -> {
+			if (authToken == null) {
+				emitter.tryOnError(new IllegalStateException("uploadFile called with null auth token"));
+				return;
+			}
+
 			RequestBody requestBody = new MultipartBody.Builder()
 					.setType(MultipartBody.FORM)
 					.addFormDataPart("fileUpload", file.getName(),
@@ -36,6 +49,7 @@ public final class ApiManager {
 					.build();
 
 			Request request = new Request.Builder()
+					.addHeader("Authorization", "Bearer " + authToken)
 					.url(NetworkManager.getInstance().getUploadEndpoint())
 					.post(requestBody)
 					.build();
@@ -67,7 +81,6 @@ public final class ApiManager {
 			} catch (Exception ex) {
 				emitter.tryOnError(ex);
 			}
-
 		});
 	}
 }
