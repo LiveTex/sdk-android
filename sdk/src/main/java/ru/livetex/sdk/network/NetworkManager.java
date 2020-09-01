@@ -127,7 +127,7 @@ public final class NetworkManager {
 					lastVisitorToken = auth(touchpoint, null, deviceToken, deviceType, visitorToken);
 					break;
 			}
-
+			onVisitorTokenUpdated();
 			connectWebSocket();
 			return lastVisitorToken;
 		});
@@ -255,5 +255,9 @@ public final class NetworkManager {
 						}
 					}
 				}, thr -> Log.e(TAG, "failEvent", thr)));
+	}
+
+	private void onVisitorTokenUpdated() {
+		apiManager.setAuthToken(lastVisitorToken);
 	}
 }
