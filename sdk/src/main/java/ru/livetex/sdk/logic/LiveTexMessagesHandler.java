@@ -19,6 +19,7 @@ import okio.ByteString;
 import ru.livetex.sdk.entity.AttributesEntity;
 import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
+import ru.livetex.sdk.entity.ButtonPressedEvent;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
@@ -27,6 +28,7 @@ import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.FileUploadedResponse;
 import ru.livetex.sdk.entity.GetHistoryRequest;
 import ru.livetex.sdk.entity.HistoryEntity;
+import ru.livetex.sdk.entity.KeyboardEntity;
 import ru.livetex.sdk.entity.RatingEvent;
 import ru.livetex.sdk.entity.ResponseEntity;
 import ru.livetex.sdk.entity.TextMessage;
@@ -177,6 +179,15 @@ public class LiveTexMessagesHandler {
 	 */
 	public void sendRatingEvent(boolean isPositiveFeedback) {
 		RatingEvent event = new RatingEvent(isPositiveFeedback ? "1" : "0");
+		String json = EntityMapper.gson.toJson(event);
+		sendJson(json);
+	}
+
+	/**
+	 * Send payload from pressed message action button ({@link KeyboardEntity.Button}
+	 */
+	public void sendButtonPressedEvent(@NonNull String payload) {
+		ButtonPressedEvent event = new ButtonPressedEvent(payload);
 		String json = EntityMapper.gson.toJson(event);
 		sendJson(json);
 	}

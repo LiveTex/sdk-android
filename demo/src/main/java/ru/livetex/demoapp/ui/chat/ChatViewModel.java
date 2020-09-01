@@ -20,11 +20,13 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
+import ru.livetex.demoapp.App;
 import ru.livetex.demoapp.Const;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.db.Mapper;
 import ru.livetex.demoapp.db.entity.ChatMessage;
 import ru.livetex.demoapp.db.entity.MessageSentState;
+import ru.livetex.demoapp.utils.IntentUtils;
 import ru.livetex.sdk.LiveTex;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
@@ -32,6 +34,7 @@ import ru.livetex.sdk.entity.DialogState;
 import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.GenericMessage;
 import ru.livetex.sdk.entity.HistoryEntity;
+import ru.livetex.sdk.entity.KeyboardEntity;
 import ru.livetex.sdk.entity.LiveTexError;
 import ru.livetex.sdk.entity.TextMessage;
 import ru.livetex.sdk.logic.LiveTexMessagesHandler;
@@ -55,6 +58,7 @@ public final class ChatViewModel extends ViewModel {
 
 	// File for upload
 	Uri selectedFile = null;
+	boolean inputEnabled = true;
 	private String quoteText = null;
 
 	public ChatViewModel(SharedPreferences sp) {
@@ -110,7 +114,14 @@ public final class ChatViewModel extends ViewModel {
 
 		disposables.add(messagesHandler.dialogStateUpdate()
 				.observeOn(Schedulers.io())
-				.subscribe(dialogStateUpdateLiveData::postValue, thr -> {
+				.subscribe(state -> {
+					boolean inputStateChanged = this.inputEnabled != state.isInputEnabled();
+					if (inputStateChanged) {
+						this.inputEnabled = state.isInputEnabled();
+						viewStateLiveData.postValue(viewStateLiveData.getValue());
+					}
+					dialogStateUpdateLiveData.postValue(state);
+				}, thr -> {
 					Log.e(TAG, "dialogStateUpdate", thr);
 				}));
 
@@ -247,6 +258,17 @@ public final class ChatViewModel extends ViewModel {
 			viewStateLiveData.setValue(ChatViewState.NORMAL);
 		} else {
 			viewStateLiveData.setValue(ChatViewState.QUOTE);
+		}
+	}
+
+	public void onMessageActionButtonClicked(KeyboardEntity.Button button) {
+		messagesHandler.sendButtonPressedEvent(button.payload);
+
+		if (!TextUtils.isEmpty(button.url)) {
+			// Delay is for better visual UX
+			Disposable d = Completable.timer(300, TimeUnit.MILLISECONDS)
+					.observeOn(AndroidSchedulers.mainThread())
+					.subscribe(() -> IntentUtils.goUrl(App.getInstance(), button.url));
 		}
 	}
 

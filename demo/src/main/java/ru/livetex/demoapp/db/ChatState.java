@@ -100,7 +100,8 @@ public final class ChatState {
 				new Date(),
 				false,
 				filePath,
-				new Visitor()
+				new Visitor(),
+				null
 		);
 		addOrUpdateMessage(chatMessage);
 		return chatMessage;
@@ -117,7 +118,8 @@ public final class ChatState {
 				new Date(),
 				true,
 				null,
-				employee
+				employee,
+				null
 		);
 		addOrUpdateMessage(chatMessage);
 		return chatMessage;

@@ -34,6 +34,9 @@
 		android:id="@+id/messagesView"
 		android:layout_width="0dp"
 		android:layout_height="0dp"
+		android:scrollbarAlwaysDrawVerticalTrack="true"
+		android:fadeScrollbars="false"
+		android:scrollbars="vertical"
 		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
 		app:layout_constraintBottom_toTopOf="@+id/bottomBarrier"
 		app:layout_constraintEnd_toEndOf="parent"
@@ -234,6 +237,7 @@
 			android:paddingTop="5dp"
 			android:paddingBottom="5dp"
 			android:src="@drawable/plus"
+			android:tint="@color/add_enabled_disabled"
 			app:layout_constraintBottom_toBottomOf="@id/inputContainerView"
 			app:layout_constraintStart_toStartOf="parent" />
 
@@ -250,13 +254,14 @@
 			<ImageView
 				android:id="@+id/filePreviewView"
 				android:layout_width="80dp"
-				android:layout_height="80dp"
+				android:layout_height="92dp"
 				android:layout_marginStart="14dp"
-				android:layout_marginTop="12dp"
+				android:paddingTop="12dp"
+				android:layout_marginBottom="6dp"
 				android:adjustViewBounds="true"
 				android:visibility="gone"
 				app:layout_constraintStart_toStartOf="parent"
-				app:layout_constraintTop_toTopOf="parent"
+				app:layout_constraintBottom_toTopOf="@id/inputView"
 				tools:src="@drawable/logo"
 				tools:visibility="gone" />
 
@@ -267,6 +272,7 @@
 				android:layout_marginStart="6dp"
 				android:ellipsize="end"
 				android:textColor="@android:color/black"
+				android:paddingTop="6dp"
 				android:textSize="16sp"
 				android:visibility="gone"
 				app:layout_constraintBottom_toBottomOf="@+id/filePreviewView"
@@ -282,6 +288,7 @@
 				android:layout_height="32dp"
 				android:clickable="true"
 				android:focusable="true"
+				android:layout_marginTop="6dp"
 				android:paddingStart="16dp"
 				android:paddingBottom="16dp"
 				android:src="@drawable/close_circled"
@@ -295,7 +302,7 @@
 				android:layout_width="0dp"
 				android:layout_height="wrap_content"
 				android:layout_marginTop="6dp"
-				android:layout_marginBottom="2dp"
+				android:layout_marginBottom="8dp"
 				android:background="@android:color/white"
 				android:visibility="gone"
 				app:layout_constraintBottom_toTopOf="@+id/inputView"
@@ -363,7 +370,7 @@
 				app:layout_constraintEnd_toEndOf="parent"
 				app:layout_constraintStart_toStartOf="parent"
 				app:layout_constraintTop_toBottomOf="@+id/quoteContainerView"
-				app:layout_goneMarginTop="6dp" />
+				app:layout_goneMarginTop="0dp" />
 		</androidx.constraintlayout.widget.ConstraintLayout>
 
 		<ImageView
@@ -376,7 +383,7 @@
 			android:paddingTop="5dp"
 			android:paddingBottom="5dp"
 			android:src="@drawable/send"
-			android:tint="#3E7AD7"
+			android:tint="@color/control_enabled_disabled"
 			app:layout_constraintBottom_toBottomOf="@+id/inputContainerView"
 			app:layout_constraintEnd_toEndOf="parent" />
 	</androidx.constraintlayout.widget.ConstraintLayout>

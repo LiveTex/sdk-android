@@ -1,9 +1,9 @@
 package ru.livetex.demoapp.db;
 
 import ru.livetex.demoapp.db.entity.ChatMessage;
-import ru.livetex.sdk.entity.Employee;
 import ru.livetex.sdk.entity.FileMessage;
 import ru.livetex.sdk.entity.TextMessage;
+import ru.livetex.sdk.entity.Visitor;
 
 /**
  * Transform server entities to DB variants
@@ -14,8 +14,9 @@ public class Mapper {
 		ChatMessage chatMessage = new ChatMessage(textMessage.id,
 				textMessage.content,
 				textMessage.createdAt,
-				textMessage.creator instanceof Employee,
-				textMessage.creator
+				!(textMessage.creator instanceof Visitor),
+				textMessage.creator,
+				textMessage.keyboard
 				);
 		return chatMessage;
 	}
@@ -24,9 +25,10 @@ public class Mapper {
 		ChatMessage chatMessage = new ChatMessage(fileMessage.id,
 				fileMessage.name,
 				fileMessage.createdAt,
-				fileMessage.creator instanceof Employee,
+				!(fileMessage.creator instanceof Visitor),
 				fileMessage.url,
-				fileMessage.creator
+				fileMessage.creator,
+				null
 		);
 		return chatMessage;
 	}

@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.Spannable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +25,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
+import com.google.android.material.button.MaterialButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,8 +36,10 @@ import ru.livetex.demoapp.R;
 import ru.livetex.demoapp.db.ChatState;
 import ru.livetex.demoapp.utils.DateUtils;
 import ru.livetex.sdk.entity.Employee;
+import ru.livetex.sdk.entity.KeyboardEntity;
 
 public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+	private static final String TAG = "MessagesAdapter";
 	private static final int VIEW_TYPE_MESSAGE_INCOMING = 1;
 	private static final int VIEW_TYPE_MESSAGE_OUTGOING = 2;
 	private static final int VIEW_TYPE_IMAGE_INCOMING = 3;
@@ -47,10 +51,17 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	private static final int VIEW_TYPE_EMPLOYEE_TYPING = 9;
 
 	private List<AdapterItem> items = new ArrayList<>();
+	private int messagesCount = 0;
 	@Nullable
 	private Consumer<ChatItem> onMessageClickListener = null;
 	@Nullable
 	private Consumer<String> onFileClickListener = null;
+	@NonNull
+	private final Consumer<KeyboardEntity.Button> onActionButtonClickListener;
+
+	public MessagesAdapter(Consumer<KeyboardEntity.Button> listener) {
+		this.onActionButtonClickListener = listener;
+	}
 
 	@NonNull
 	@Override
@@ -104,7 +115,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 		switch (holder.getItemViewType()) {
 			case VIEW_TYPE_MESSAGE_INCOMING:
-				((IncomingMessageHolder) holder).bind((ChatItem) message);
+				((IncomingMessageHolder) holder).bind((ChatItem) message, onActionButtonClickListener);
 				break;
 			case VIEW_TYPE_MESSAGE_OUTGOING:
 				((OutgoingMessageHolder) holder).bind((ChatItem) message);
@@ -196,6 +207,10 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		return items.size();
 	}
 
+	public int getMessagesCount() {
+		return messagesCount;
+	}
+
 	public List<AdapterItem> getData() {
 		return items;
 	}
@@ -203,6 +218,13 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 	public void setData(List<AdapterItem> chatMessages) {
 		this.items.clear();
 		this.items.addAll(chatMessages);
+
+		messagesCount = 0;
+		for (AdapterItem adapterItem : chatMessages) {
+			if (adapterItem.getAdapterItemType() == ItemType.CHAT_MESSAGE) {
+				messagesCount++;
+			}
+		}
 	}
 
 	public void setOnMessageClickListener(@NonNull Consumer<ChatItem> onMessageClickListener) {
@@ -220,6 +242,7 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		TextView timeView;
 		TextView quoteView;
 		View quoteSeparatorView;
+		ViewGroup buttonsContainerView;
 
 		IncomingMessageHolder(View itemView) {
 			super(itemView);
@@ -230,22 +253,45 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 			timeView = itemView.findViewById(R.id.timeView);
 			quoteView = itemView.findViewById(R.id.quoteView);
 			quoteSeparatorView = itemView.findViewById(R.id.quoteSeparatorView);
+			buttonsContainerView = itemView.findViewById(R.id.buttonsContainerView);
 		}
 
-		void bind(ChatItem message) {
+		void bind(ChatItem message, Consumer<KeyboardEntity.Button> onActionButtonClickListener) {
 			Spannable text = ru.livetex.demoapp.utils.TextUtils.setTextWithLinks(message.content, messageView);
 			handleQuotedText(message, quoteView, quoteSeparatorView);
 			handleLinkPreview(messageView, text, message.id);
 
-			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = ((Employee) message.creator).avatarUrl;
-			String opName = ((Employee) message.creator).name;
-
-			loadAvatar(avatarView, avatarUrl);
-
-			nameView.setText(opName);
-
+			loadAvatar(avatarView, message);
+			setOperatorName(nameView, message);
 			setState(timeView, message);
+
+			handleKeyboardButtons(buttonsContainerView, message, onActionButtonClickListener);
+		}
+
+		private void handleKeyboardButtons(ViewGroup containerView, ChatItem message, Consumer<KeyboardEntity.Button> onActionButtonClickListener) {
+			containerView.removeAllViews();
+			containerView.setVisibility(message.keyboard != null ? View.VISIBLE : View.GONE);
+
+			if (message.keyboard != null) {
+				for (KeyboardEntity.Button button : message.keyboard.buttons) {
+					MaterialButton view = (MaterialButton) View.inflate(containerView.getContext(), R.layout.l_message_keyboard_button, null);
+					view.setText(button.label);
+					view.setEnabled(!message.keyboard.pressed);
+					view.setOnClickListener(v -> {
+						try {
+							onActionButtonClickListener.accept(button);
+							for (int i = 0; i < containerView.getChildCount(); i++) {
+								View v2 = containerView.getChildAt(i);
+								v2.setEnabled(false);
+							}
+						} catch (Exception e) {
+							Log.e(TAG, "onActionButtonClickListener", e);
+						}
+					});
+
+					containerView.addView(view);
+				}
+			}
 		}
 	}
 
@@ -267,13 +313,9 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 
 		void bind(EmployeeTypingItem message) {
 			handler = new Handler(Looper.getMainLooper());
-			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = ((Employee) message.creator).avatarUrl;
-			String opName = ((Employee) message.creator).name;
 
-			loadAvatar(avatarView, avatarUrl);
-
-			nameView.setText(opName);
+			loadAvatar(avatarView, message);
+			setOperatorName(nameView, message);
 
 			timeView.setVisibility(View.GONE);
 
@@ -340,18 +382,12 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message, Consumer<String> onFileClickListener) {
 			messageView.setText(message.content);
 
-			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = ((Employee) message.creator).avatarUrl;
-			String opName = ((Employee) message.creator).name;
-
-			loadAvatar(avatarView, avatarUrl);
-
-			nameView.setText(opName);
+			loadAvatar(avatarView, message);
+			setOperatorName(nameView, message);
+			setState(timeView, message);
 
 			messageView.setCompoundDrawablesWithIntrinsicBounds(R.drawable.doc, 0, 0, 0);
 			messageView.setCompoundDrawablePadding(messageView.getResources().getDimensionPixelOffset(R.dimen.chat_message_file_icon_padding));
-
-			setState(timeView, message);
 
 			if (onFileClickListener != null) {
 				messageView.setOnClickListener(view -> {
@@ -443,14 +479,8 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		void bind(ChatItem message, Consumer<String> onFileClickListener) {
 			loadImage(message, imageView);
 
-			// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
-			String avatarUrl = ((Employee) message.creator).avatarUrl;
-			String opName = ((Employee) message.creator).name;
-
-			loadAvatar(avatarView, avatarUrl);
-
-			nameView.setText(opName);
-
+			loadAvatar(avatarView, message);
+			setOperatorName(nameView, message);
 			setState(timeView, message);
 
 			if (onFileClickListener != null) {
@@ -535,8 +565,16 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 				.into(imageView);
 	}
 
-	private static void loadAvatar(ImageView avatarView, String avatarUrl) {
-		if (!TextUtils.isEmpty(avatarUrl)) {
+	// For better implementation see https://bumptech.github.io/glide/int/recyclerview.html
+	private static void loadAvatar(ImageView avatarView, ChatItem message) {
+		Object avatarUrl;
+		if (!message.isBot) {
+			avatarUrl = ((Employee) message.creator).avatarUrl;
+		} else {
+			avatarUrl = R.drawable.logo;
+		}
+
+		if (avatarUrl != null) {
 			Glide.with(avatarView.getContext())
 					.load(avatarUrl)
 					.placeholder(R.drawable.avatar)
@@ -548,6 +586,16 @@ public final class MessagesAdapter extends RecyclerView.Adapter<RecyclerView.Vie
 		} else {
 			avatarView.setImageResource(R.drawable.avatar);
 		}
+	}
+
+	private static void setOperatorName(TextView nameView, ChatItem message) {
+		String name = null;
+		if (!message.isBot) {
+			name = ((Employee) message.creator).name;
+		}
+
+		nameView.setText(name);
+		nameView.setVisibility(!TextUtils.isEmpty(name) ? View.VISIBLE : View.GONE);
 	}
 
 	private static void handleQuotedText(ChatItem message, TextView quoteView, View quoteSeparatorView) {
