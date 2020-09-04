@@ -16,7 +16,6 @@ public final class DialogState extends BaseEntity {
 	public EmployeeStatus employeeStatus = EmployeeStatus.OFFLINE;
 	@Nullable
 	public Employee employee = null;
-	// Indicates when chat input UI should be shown or hidden/disabled. When false, user shouldn't be able to send text or file messages.
 	@Nullable
 	Boolean inputEnabled = null;
 
@@ -38,6 +37,10 @@ public final class DialogState extends BaseEntity {
 		OFFLINE
 	}
 
+	/**
+	 * Indicates when chat input UI should be shown or hidden/disabled. When false, user shouldn't be able to send text or file messages.
+	 * Usage of this flag is recommended, but you can use your own logic.
+	 */
 	public boolean isInputEnabled() {
 		return !Objects.equals(inputEnabled, false);
 	}

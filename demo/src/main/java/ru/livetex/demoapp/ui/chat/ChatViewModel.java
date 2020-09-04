@@ -265,10 +265,10 @@ public final class ChatViewModel extends ViewModel {
 		messagesHandler.sendButtonPressedEvent(button.payload);
 
 		if (!TextUtils.isEmpty(button.url)) {
-			// Delay is for better visual UX
-			Disposable d = Completable.timer(300, TimeUnit.MILLISECONDS)
-					.observeOn(AndroidSchedulers.mainThread())
-					.subscribe(() -> IntentUtils.goUrl(App.getInstance(), button.url));
+			// Delay for better visual UX
+			Disposable d = Completable.timer(300, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
+					.subscribe(() -> IntentUtils.goUrl(App.getInstance(), button.url), thr -> Log.e(TAG, "onMessageActionButtonClicked: go url", thr));
+			disposables.add(d);
 		}
 	}
 
