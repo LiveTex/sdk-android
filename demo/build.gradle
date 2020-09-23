@@ -48,6 +48,8 @@ dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 	// LiveTex
 	implementation project(":sdk")
+	// Warning! "implementation project" is a local dependency, you should use a repo version (see Readme) !
+	//implementation('com.github.LiveTex:sdk-android:1.x')
 
 	// androidx, ui
 	implementation 'androidx.appcompat:appcompat:1.2.0'
