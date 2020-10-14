@@ -77,7 +77,7 @@ public class ChatActivity extends AppCompatActivity {
 	private AddFileDialog addFileDialog = null;
 
 	private final static long TEXT_TYPING_DELAY = 500L; // milliseconds
-	private PublishSubject<String> textSubject = PublishSubject.create();
+	private final PublishSubject<String> textSubject = PublishSubject.create();
 
 	private EditText inputView;
 	private ImageView addView;
@@ -177,7 +177,7 @@ public class ChatActivity extends AppCompatActivity {
 			}
 			case AddFileDialog.RequestCodes.SELECT_IMAGE_OR_VIDEO: {
 				addFileDialog.close();
-				if (resultCode == Activity.RESULT_OK) {
+				if (resultCode == Activity.RESULT_OK && data != null) {
 					Uri uri = data.getData();
 					if (uri == null) {
 						Toast.makeText(this, "Не удалось открыть файл", Toast.LENGTH_SHORT).show();
@@ -200,7 +200,7 @@ public class ChatActivity extends AppCompatActivity {
 			}
 			case AddFileDialog.RequestCodes.SELECT_FILE: {
 				addFileDialog.close();
-				if (resultCode == Activity.RESULT_OK) {
+				if (resultCode == Activity.RESULT_OK && data != null) {
 					Uri uri = data.getData();
 					if (uri == null) {
 						Toast.makeText(this, "Не удалось открыть файл", Toast.LENGTH_SHORT).show();
@@ -217,7 +217,7 @@ public class ChatActivity extends AppCompatActivity {
 				break;
 			}
 			case UCrop.REQUEST_CROP: {
-				if (resultCode == Activity.RESULT_OK) {
+				if (resultCode == Activity.RESULT_OK && data != null) {
 					final Uri resultUri = UCrop.getOutput(data);
 					if (resultUri == null) {
 						Log.e(TAG, "crop: resultUri == null");
@@ -271,6 +271,10 @@ public class ChatActivity extends AppCompatActivity {
 //		messagesView.addItemDecoration(dividerItemDecoration);
 		((SimpleItemAnimator) messagesView.getItemAnimator()).setSupportsChangeAnimations(false);
 
+		disposables.add(ChatState.instance.messages()
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(this::setMessages, thr -> Log.e(TAG, "messages observe", thr)));
+
 		messagesView.addOnScrollListener(new RecyclerViewScrollListener((LinearLayoutManager) messagesView.getLayoutManager()) {
 			@Override
 			public void onLoadRequest() {
@@ -294,10 +298,6 @@ public class ChatActivity extends AppCompatActivity {
 			protected void onScrollDown() {
 			}
 		});
-
-		disposables.add(ChatState.instance.messages()
-				.observeOn(AndroidSchedulers.mainThread())
-				.subscribe(this::setMessages, thr -> Log.e(TAG, "messages observe", thr)));
 
 		View.OnClickListener feedbackClickListener = v -> {
 			feedbackContainerView.postDelayed(() -> feedbackContainerView.setVisibility(View.GONE), 250);
