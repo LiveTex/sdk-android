@@ -72,7 +72,7 @@
 			android:layout_marginEnd="20dp"
 			android:background="?attr/selectableItemBackgroundBorderless"
 			android:src="@drawable/thumbup"
-			android:tint="@android:color/holo_green_dark"
+			app:tint="@android:color/holo_green_dark"
 			app:layout_constraintEnd_toStartOf="@+id/feedbackNegativeView"
 			app:layout_constraintTop_toTopOf="parent" />
 
@@ -82,7 +82,7 @@
 			android:layout_height="24dp"
 			android:background="?attr/selectableItemBackgroundBorderless"
 			android:src="@drawable/thumbdown"
-			android:tint="@android:color/holo_red_dark"
+			app:tint="@android:color/holo_red_dark"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintTop_toTopOf="parent" />
 	</androidx.constraintlayout.widget.ConstraintLayout>
@@ -237,7 +237,7 @@
 			android:paddingTop="5dp"
 			android:paddingBottom="5dp"
 			android:src="@drawable/plus"
-			android:tint="@color/add_enabled_disabled"
+			app:tint="@color/add_enabled_disabled"
 			app:layout_constraintBottom_toBottomOf="@id/inputContainerView"
 			app:layout_constraintStart_toStartOf="parent" />
 
@@ -383,7 +383,7 @@
 			android:paddingTop="5dp"
 			android:paddingBottom="5dp"
 			android:src="@drawable/send"
-			android:tint="@color/control_enabled_disabled"
+			app:tint="@color/control_enabled_disabled"
 			app:layout_constraintBottom_toBottomOf="@+id/inputContainerView"
 			app:layout_constraintEnd_toEndOf="parent" />
 	</androidx.constraintlayout.widget.ConstraintLayout>
