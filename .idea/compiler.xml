@@ -11,5 +11,9 @@
       <entry name="!?*.kt" />
       <entry name="!?*.clj" />
     </wildcardResourcePatterns>
+    <bytecodeTargetLevel>
+      <module name="LiveTexSDK.demo" target="1.8" />
+      <module name="LiveTexSDK.sdk" target="1.8" />
+    </bytecodeTargetLevel>
   </component>
 </project>
