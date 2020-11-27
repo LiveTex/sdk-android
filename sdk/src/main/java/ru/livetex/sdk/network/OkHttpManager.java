@@ -10,7 +10,6 @@ import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okhttp3.logging.HttpLoggingInterceptor;
-import ru.livetex.sdk.BuildConfig;
 
 final class OkHttpManager {
 	private static final long CONNECT_TIMEOUT_SECONDS = 30;
@@ -19,12 +18,12 @@ final class OkHttpManager {
 
 	private static final long WEBSOCKET_PING_INTERVAL = 30_000L;
 
-	private okhttp3.OkHttpClient client;
-	private okhttp3.OkHttpClient webSocketClient;
+	private final okhttp3.OkHttpClient client;
+	private final okhttp3.OkHttpClient webSocketClient;
 
-	OkHttpManager() {
+	OkHttpManager(boolean isNetworkLoggingEnabled) {
 		final HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-		loggingInterceptor.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
+		loggingInterceptor.setLevel(isNetworkLoggingEnabled ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.NONE);
 
 		OkHttpClient.Builder builder = new OkHttpClient.Builder();
 		builder.addInterceptor(loggingInterceptor);

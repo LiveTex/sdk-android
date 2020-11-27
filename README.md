@@ -55,6 +55,14 @@ new LiveTex.Builder(Const.TOUCHPOINT).build();
 
 Далее можно обращаться к синглтону через `LiveTex.getInstance()`.
 
+Для того, чтобы включить логгирование запросов, добавьте в инициализацию
+```java
+new LiveTex.Builder(Const.TOUCHPOINT)
+		.setNetworkLoggingEnabled()
+		.setWebsocketLoggingEnabled()
+		.build();
+```
+
 **Пуши**
 
 В демо приложении есть пример того, как подключить пуши и передать токен в LiveTex.

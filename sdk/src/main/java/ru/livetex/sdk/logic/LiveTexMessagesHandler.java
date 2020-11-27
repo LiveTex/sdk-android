@@ -38,6 +38,7 @@ import ru.livetex.sdk.network.NetworkManager;
 public class LiveTexMessagesHandler {
 	protected final String TAG = "MessagesHandler";
 
+	private boolean isWebsocketLoggingEnabled = false;
 	private final PublishSubject<BaseEntity> entitySubject = PublishSubject.create();
 	private final PublishSubject<DialogState> dialogStateSubject = PublishSubject.create();
 	private final PublishSubject<HistoryEntity> historyUpdateSubject = PublishSubject.create();
@@ -49,12 +50,16 @@ public class LiveTexMessagesHandler {
 
 	protected EntityMapper mapper = new EntityMapper();
 
-	public void init() {
+	public void init(boolean isWebsocketLoggingEnabled) {
+		this.isWebsocketLoggingEnabled = isWebsocketLoggingEnabled;
+
 		Disposable disposable = NetworkManager.getInstance().connectionState()
 				.filter(state -> state == NetworkManager.ConnectionState.DISCONNECTED)
 				.subscribe(ignore -> {
 					// Cleanup on disconnect
-					Log.i(TAG, "Disconnect detected, clearing subscriptions");
+					if (isWebsocketLoggingEnabled) {
+						Log.i(TAG, "Disconnect detected, clearing subscriptions");
+					}
 					for (Subject subj : subscriptions.values()) {
 						if (!subj.hasComplete()) {
 							subj.onError(new IllegalStateException("Websocket disconnect"));
@@ -69,7 +74,9 @@ public class LiveTexMessagesHandler {
 	}
 
 	public synchronized void onMessage(String text) {
-		Log.d(TAG, "onMessage " + text);
+		if (isWebsocketLoggingEnabled) {
+			Log.d(TAG, "onMessage " + text);
+		}
 		BaseEntity entity = null;
 
 		try {
@@ -124,6 +131,7 @@ public class LiveTexMessagesHandler {
 
 	/**
 	 * Request chunk of previous messages in chat history
+	 *
 	 * @return subscription with count of previous messages loaded
 	 */
 	public Single<Integer> getHistory(String messageId) {
@@ -132,7 +140,10 @@ public class LiveTexMessagesHandler {
 
 	/**
 	 * Request chunk of previous messages in chat history
-	 * @param count - count (limit) of messages to load
+	 *
+	 * @param count
+	 * 		- count (limit) of messages to load
+	 *
 	 * @return subscription with count of previous messages loaded
 	 */
 	public Single<Integer> getHistory(String messageId, int count) {
@@ -163,7 +174,9 @@ public class LiveTexMessagesHandler {
 
 	/**
 	 * Send answer to attributesRequest event.
-	 * @param attrs - custom attributes if required by your project.
+	 *
+	 * @param attrs
+	 * 		- custom attributes if required by your project.
 	 */
 	public void sendAttributes(@Nullable String name,
 							   @Nullable String phone,
@@ -206,7 +219,9 @@ public class LiveTexMessagesHandler {
 
 	/**
 	 * Send answer to departmentRequest event.
-	 * @param departmentId - id of chosen department.
+	 *
+	 * @param departmentId
+	 * 		- id of chosen department.
 	 */
 	public Single<ResponseEntity> sendDepartmentSelectionEvent(String departmentId) {
 		Department event = new Department(departmentId);
