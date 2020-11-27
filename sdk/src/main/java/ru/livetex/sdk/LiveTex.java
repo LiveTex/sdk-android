@@ -47,6 +47,9 @@ public final class LiveTex {
 		@NonNull
 		private final String deviceType = "android";
 
+		private boolean isNetworkLoggingEnabled = false;
+		private boolean isWebsocketLoggingEnabled = false;
+
 		private LiveTexMessagesHandler messageHandler = new LiveTexMessagesHandler();
 		private LiveTexWebsocketListener websocketListener = new LiveTexWebsocketListener();
 
@@ -87,10 +90,26 @@ public final class LiveTex {
 			return this;
 		}
 
+		/**
+		 * Enable logging of (non-websocket) communication (for debug)
+		 */
+		public Builder setNetworkLoggingEnabled() {
+			this.isNetworkLoggingEnabled = true;
+			return this;
+		}
+
+		/**
+		 * Enable logging of websocket communication (for debug)
+		 */
+		public Builder setWebsocketLoggingEnabled() {
+			this.isWebsocketLoggingEnabled = true;
+			return this;
+		}
+
 		public void build() {
 			instance = new LiveTex(this);
-			NetworkManager.init(host, touchpoint, deviceToken, deviceType);
-			messageHandler.init();
+			NetworkManager.init(host, touchpoint, deviceToken, deviceType, isNetworkLoggingEnabled);
+			messageHandler.init(isWebsocketLoggingEnabled);
 			websocketListener.init();
 		}
 	}

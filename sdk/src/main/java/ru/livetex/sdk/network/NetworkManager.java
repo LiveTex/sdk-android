@@ -27,8 +27,8 @@ public final class NetworkManager {
 	private static final String TAG = "NetworkManager";
 	private static NetworkManager instance;
 
-	private final OkHttpManager okHttpManager = new OkHttpManager();
-	private final ApiManager apiManager = new ApiManager(okHttpManager);
+	private final OkHttpManager okHttpManager;
+	private final ApiManager apiManager;
 	private final LiveTexWebsocketListener websocketListener;
 	private final CompositeDisposable disposables = new CompositeDisposable();
 
@@ -40,7 +40,7 @@ public final class NetworkManager {
 	}
 
 	// Endpoint for auth request.
-	private String authHost;
+	private final String authHost;
 	// Endpoint for web socket connection. Can be changed by auth response.
 	private String wsEndpoint;
 	// Endpoint for file upload. Can be changed by auth response.
@@ -62,13 +62,16 @@ public final class NetworkManager {
 	private NetworkManager(@NonNull String host,
 						   @NonNull String touchpoint,
 						   @Nullable String deviceToken,
-						   @Nullable String deviceType) {
+						   @Nullable String deviceType,
+						   boolean isNetworkLoggingEnabled) {
 		this.authHost = "https://" + host + "v1/";
 		this.wsEndpoint = "wss://" + host + "v1/ws/{visitorToken}";
 		this.uploadEndpoint = "https://" + host + "v1/upload";
 		this.touchpoint = touchpoint;
 		this.deviceToken = deviceToken;
 		this.deviceType = deviceType;
+		this.okHttpManager = new OkHttpManager(isNetworkLoggingEnabled);
+		this.apiManager = new ApiManager(okHttpManager);
 		this.websocketListener = LiveTex.getInstance().getWebsocketListener();
 		subscribeToWebsocket();
 
@@ -87,8 +90,9 @@ public final class NetworkManager {
 	public static void init(@NonNull String host,
 							@NonNull String touchpoint,
 							String deviceToken,
-							String deviceType) {
-		instance = new NetworkManager(host, touchpoint, deviceToken, deviceType);
+							String deviceType,
+							boolean isNetworkLoggingEnabled) {
+		instance = new NetworkManager(host, touchpoint, deviceToken, deviceType, isNetworkLoggingEnabled);
 	}
 
 	public static NetworkManager getInstance() {
