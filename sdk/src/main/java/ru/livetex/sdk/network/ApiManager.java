@@ -153,32 +153,29 @@ public final class ApiManager {
 
 			MediaType mediaType = MediaType.parse(mimeType != null ? mimeType : "text/plain");
 
-			InputStream inputStream;
-			try {
-				inputStream = context.getContentResolver().openInputStream(uri);
-			} catch (Exception e) {
-				emitter.tryOnError(e);
-				return;
-			}
+			InputStreamProvider provider = () -> context.getContentResolver().openInputStream(uri);
 
-			uploadFile(fileName, inputStream, mediaType, emitter);
+			uploadFile(fileName, provider, mediaType, emitter);
 		});
 	}
 
-	public Single<FileUploadedResponse> uploadFile(String fileName, InputStream inputStream, @Nullable MediaType mediaType) {
+	/**
+	 * @param inputStreamProvider - just wrap your InputStream opening. For example '() -> context.getContentResolver().openInputStream(uri)'
+	 */
+	public Single<FileUploadedResponse> uploadFile(String fileName, InputStreamProvider inputStreamProvider, @Nullable MediaType mediaType) {
 		return Single.create(emitter -> {
 			if (authToken == null) {
 				emitter.tryOnError(new IllegalStateException("uploadFile called with null auth token"));
 				return;
 			}
 
-			uploadFile(fileName, inputStream, mediaType, emitter);
+			uploadFile(fileName, inputStreamProvider, mediaType, emitter);
 		});
 	}
 
 	private void uploadFile(
 			String fileName,
-			InputStream inputStream,
+			InputStreamProvider inputStreamProvider,
 			@Nullable MediaType mediaType,
 			SingleEmitter<FileUploadedResponse> emitter
 	) {
@@ -195,7 +192,9 @@ public final class ApiManager {
 
 							@Override
 							public void writeTo(@NonNull BufferedSink sink) throws IOException {
-								sink.writeAll(Okio.source(inputStream));
+								try (InputStream inputStream = inputStreamProvider.get()) {
+									sink.writeAll(Okio.source(inputStream));
+								}
 							}
 						}
 				)
@@ -233,5 +232,9 @@ public final class ApiManager {
 		} catch (Exception ex) {
 			emitter.tryOnError(ex);
 		}
+	}
+
+	public interface InputStreamProvider {
+		InputStream get() throws IOException;
 	}
 }
