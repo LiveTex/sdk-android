@@ -10,7 +10,7 @@ import androidx.annotation.RequiresApi;
 import io.reactivex.subjects.BehaviorSubject;
 
 class NetworkChangeCallback extends ConnectivityManager.NetworkCallback {
-	private BehaviorSubject<NetworkStateObserver.InternetConnectionStatus> subject;
+	private final BehaviorSubject<NetworkStateObserver.InternetConnectionStatus> subject;
 
 	@RequiresApi(api = Build.VERSION_CODES.M)
 	public NetworkChangeCallback(BehaviorSubject<NetworkStateObserver.InternetConnectionStatus> subject, ConnectivityManager connectivityManager) {

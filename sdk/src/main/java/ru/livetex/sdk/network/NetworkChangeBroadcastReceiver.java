@@ -8,7 +8,7 @@ import android.net.ConnectivityManager;
 import io.reactivex.subjects.BehaviorSubject;
 
 class NetworkChangeBroadcastReceiver extends BroadcastReceiver {
-	private BehaviorSubject<NetworkStateObserver.InternetConnectionStatus> subject;
+	private final BehaviorSubject<NetworkStateObserver.InternetConnectionStatus> subject;
 
 	NetworkChangeBroadcastReceiver(BehaviorSubject<NetworkStateObserver.InternetConnectionStatus> subject) {
 		this.subject = subject;

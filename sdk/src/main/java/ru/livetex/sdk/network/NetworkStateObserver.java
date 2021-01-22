@@ -15,7 +15,7 @@ class NetworkStateObserver {
 		DISCONNECTED
 	}
 
-	private BehaviorSubject<InternetConnectionStatus> connectionStatusSubject = BehaviorSubject.create();
+	private final BehaviorSubject<InternetConnectionStatus> connectionStatusSubject = BehaviorSubject.create();
 	private NetworkChangeBroadcastReceiver networkChangeBroadcastReceiver = null;
 
 	Observable<InternetConnectionStatus> status() {
