@@ -57,8 +57,7 @@ public class EntityMapper {
 					return gson.fromJson(json, DialogState.class);
 				}
 				case TextMessage.TYPE: {
-					TextMessage message = parseTextMessage(json);
-					return message;
+					return parseTextMessage(json);
 				}
 				case FileMessage.TYPE: {
 					return parseFileMessage(json);

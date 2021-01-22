@@ -82,9 +82,7 @@ public final class NetworkManager {
 					if (needReconnect && connectionStateSubject.getValue() == ConnectionState.DISCONNECTED) {
 						connectWebSocket();
 					}
-				}, thr -> {
-					Log.e(TAG, "networkStateObserver", thr);
-				}));
+				}, thr -> Log.e(TAG, "networkStateObserver", thr)));
 	}
 
 	public static void init(@NonNull String host,
@@ -240,7 +238,8 @@ public final class NetworkManager {
 				.observeOn(Schedulers.io())
 				.subscribe(pair -> {
 					WebSocket ws = pair.first;
-					Throwable thr = pair.second;
+					Throwable reason = pair.second;
+
 					if (ws == webSocket) {
 						webSocket = null;
 						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
