@@ -9,8 +9,8 @@ import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import io.reactivex.subjects.BehaviorSubject;
 
-class NetworkStateObserver {
-	enum InternetConnectionStatus {
+public final class NetworkStateObserver {
+	public enum InternetConnectionStatus {
 		CONNECTED,
 		DISCONNECTED
 	}
@@ -18,16 +18,16 @@ class NetworkStateObserver {
 	private final BehaviorSubject<InternetConnectionStatus> connectionStatusSubject = BehaviorSubject.create();
 	private NetworkChangeBroadcastReceiver networkChangeBroadcastReceiver = null;
 
-	Observable<InternetConnectionStatus> status() {
+	public Observable<InternetConnectionStatus> status() {
 		return connectionStatusSubject;
 	}
 
 	@Nullable
-	InternetConnectionStatus getStatus() {
+	public InternetConnectionStatus getStatus() {
 		return connectionStatusSubject.getValue();
 	}
 
-	void startObserve(Context context) {
+	public void startObserve(Context context) {
 		ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && connectivityManager != null) {
 			NetworkChangeCallback callback = new NetworkChangeCallback(connectionStatusSubject, connectivityManager);
@@ -39,7 +39,7 @@ class NetworkStateObserver {
 		}
 	}
 
-	void stopObserve(Context context) {
+	public void stopObserve(Context context) {
 		if (networkChangeBroadcastReceiver != null) {
 			context.unregisterReceiver(networkChangeBroadcastReceiver);
 			networkChangeBroadcastReceiver = null;

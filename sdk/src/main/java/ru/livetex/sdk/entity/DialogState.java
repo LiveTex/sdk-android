@@ -40,7 +40,7 @@ public final class DialogState extends BaseEntity {
 	/**
 	 * Indicates when chat input UI should be shown or hidden. When false, user shouldn't be able to send text or file messages.
 	 */
-	public boolean isInputEnabled() {
+	public boolean canShowInput() {
 		return !Objects.equals(showInput, false);
 	}
 
