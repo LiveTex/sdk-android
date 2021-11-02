@@ -112,7 +112,7 @@ private void initLiveTex() {
 
 **Авторизация и подключение**
 
-Для авторизации и подключения используется один метод [NetworkManager.connect()](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java). В него передается параметры visitorToken и authTokenType.
+Для авторизации и подключения используется один метод [NetworkManager.connect()](sdk/src/main/java/ru/livetex/sdk/network/NetworkManager.java). В него передается параметры visitorToken, authTokenType и флаг нужности автореконнекта.
 
 visitorToken - токен (id) пользователя (который получили раньше или null если первая авторизация). Если у вас в системе уже есть сущность пользователя с неким айди, можете использовать его с соответствующим authTokenType;
 

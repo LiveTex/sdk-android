@@ -55,7 +55,7 @@ public final class NetworkManager {
 	private String lastVisitorToken = null;
 	@Nullable
 	private WebSocket webSocket = null;
-	private boolean needReconnect = true;
+	private boolean websocketReconnectRequired = true;
 	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
 	private final NetworkStateObserver networkStateObserver = new NetworkStateObserver();
 
@@ -79,7 +79,7 @@ public final class NetworkManager {
 				.filter(status -> status == NetworkStateObserver.InternetConnectionStatus.CONNECTED)
 				.observeOn(Schedulers.io())
 				.subscribe(status -> {
-					if (needReconnect && connectionStateSubject.getValue() == ConnectionState.DISCONNECTED) {
+					if (websocketReconnectRequired && connectionStateSubject.getValue() == ConnectionState.DISCONNECTED) {
 						connectWebSocket();
 					}
 				}, thr -> Log.e(TAG, "networkStateObserver", thr)));
@@ -117,9 +117,24 @@ public final class NetworkManager {
 	 * Do authorization and connect to chat websocket.
 	 * @param visitorToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
 	 * @param authTokenType - AuthTokenType.DEFAULT for standard (LiveTex) token system.
-	 * @return new ly generated visitorToken if param was null, or same visitorToken which was provided
+	 * @return newly generated visitorToken if param was null, or same visitorToken which was provided
 	 */
-	public Single<String> connect(@Nullable String visitorToken, AuthTokenType authTokenType) {
+	public Single<String> connect(@Nullable String visitorToken,
+								  AuthTokenType authTokenType) {
+		return connect(visitorToken, authTokenType, true);
+	}
+
+	/**
+	 * Do authorization and connect to chat websocket.
+	 * @param visitorToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
+	 * @param authTokenType - AuthTokenType.DEFAULT for standard (LiveTex) token system.
+	 * @param websocketReconnectRequired - set true to automatically reconnect websocket. Works only if auth was successful and websocket was established.
+	 *                                      For full reconnect with auth you need implement your own logic based on network state observe.
+	 * @return newly generated visitorToken if param was null, or same visitorToken which was provided
+	 */
+	public Single<String> connect(@Nullable String visitorToken,
+								  AuthTokenType authTokenType,
+								  boolean websocketReconnectRequired) {
 		return Single.fromCallable(() -> {
 			switch (authTokenType) {
 				case DEFAULT:
@@ -129,6 +144,7 @@ public final class NetworkManager {
 					lastVisitorToken = auth(touchpoint, null, deviceToken, deviceType, visitorToken);
 					break;
 			}
+			this.websocketReconnectRequired = websocketReconnectRequired;
 			onVisitorTokenUpdated();
 			connectWebSocket();
 			return lastVisitorToken;
@@ -145,7 +161,8 @@ public final class NetworkManager {
 	}
 
 	public void forceDisconnect() {
-		needReconnect = false;
+		websocketReconnectRequired = false;
+
 		if (webSocket != null) {
 			Log.i(TAG, "Disconnecting websocket...");
 			webSocket.close(1000, "disconnect requested");
@@ -220,7 +237,7 @@ public final class NetworkManager {
 						webSocket = null;
 						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
 
-						if (needReconnect) {
+						if (websocketReconnectRequired) {
 							connectWebSocket();
 						}
 					}
@@ -243,8 +260,7 @@ public final class NetworkManager {
 					if (ws == webSocket) {
 						webSocket = null;
 						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						needReconnect = true;
-						boolean needReconnectNow = networkStateObserver.getStatus() == NetworkStateObserver.InternetConnectionStatus.CONNECTED;
+						boolean needReconnectNow = websocketReconnectRequired && networkStateObserver.getStatus() == NetworkStateObserver.InternetConnectionStatus.CONNECTED;
 
 						// Can be endless loop, so handle only SocketTimeoutException
 						if (needReconnectNow) {

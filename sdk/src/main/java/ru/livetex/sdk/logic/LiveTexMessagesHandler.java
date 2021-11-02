@@ -70,7 +70,7 @@ public class LiveTexMessagesHandler {
 						getHistorySubscription.second.onError(new IllegalStateException("Websocket disconnect"));
 						getHistorySubscription = null;
 					}
-				}, thr -> Log.e(TAG, "", thr));
+				}, thr -> Log.e(TAG, "connectionState observe", thr));
 	}
 
 	public synchronized void onMessage(String text) {
@@ -295,7 +295,9 @@ public class LiveTexMessagesHandler {
 
 	private void sendJson(String json) {
 		if (NetworkManager.getInstance().getWebSocket() != null) {
-			Log.d(TAG, "Sending: " + json);
+			if (isWebsocketLoggingEnabled) {
+				Log.d(TAG, "Sending: " + json);
+			}
 			NetworkManager.getInstance().getWebSocket().send(json);
 		} else {
 			throw new IllegalStateException("Trying to send data when websocket is null");
