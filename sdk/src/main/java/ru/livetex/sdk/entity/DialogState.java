@@ -17,7 +17,7 @@ public final class DialogState extends BaseEntity {
 	@Nullable
 	public Employee employee = null;
 	@NonNull
-	Boolean showInput = true;
+	public Boolean showInput = true;
 
 	public enum DialogStatus {
 		@SerializedName("unassigned")
