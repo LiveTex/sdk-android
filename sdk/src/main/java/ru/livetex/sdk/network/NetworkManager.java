@@ -176,7 +176,6 @@ public final class NetworkManager {
 								  AuthTokenType authTokenType,
 								  boolean reconnectRequired) {
 		return Single.fromCallable(() -> {
-			String lastVisitorToken = null;
 			switch (authTokenType) {
 				case DEFAULT:
 					this.authData = AuthData.withVisitorToken(visitorToken);
