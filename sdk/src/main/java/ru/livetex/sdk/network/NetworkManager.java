@@ -36,7 +36,6 @@ public final class NetworkManager {
 	private final OkHttpManager okHttpManager;
 	private final ApiManager apiManager;
 	private final LiveTexWebsocketListener websocketListener;
-	private static final Scheduler connectionScheduler = Schedulers.from(Executors.newSingleThreadExecutor());
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
 	private final BehaviorSubject<Boolean> websocketFailSubject = BehaviorSubject.createDefault(false);
@@ -87,8 +86,7 @@ public final class NetworkManager {
 		subscribeToWebsocket();
 
 		disposables.add(Observable.combineLatest(networkStateObserver.status(), websocketFailSubject, Pair::new)
-				.subscribeOn(connectionScheduler)
-				.observeOn(connectionScheduler)
+				.observeOn(Schedulers.io())
 				.map(pair -> pair.first)
 				.flatMapCompletable(status -> {
 					if (status == NetworkStateObserver.InternetConnectionStatus.CONNECTED) {
@@ -96,7 +94,6 @@ public final class NetworkManager {
 								connectionStateSubject.getValue() == ConnectionState.DISCONNECTED &&
 								authData != null) {
 							return connect(authData, true)
-									.retry(1)
 									.ignoreElement()
 									.onErrorComplete(thr -> {
 										Log.e(TAG, "networkStateObserver", thr);
@@ -110,6 +107,7 @@ public final class NetworkManager {
 						if (webSocket != null) {
 							Log.i(TAG, "Disconnecting websocket (network state)");
 							webSocket.close(1000, "disconnect requested");
+							webSocket = null;
 						}
 						if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
 							connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
@@ -159,9 +157,16 @@ public final class NetworkManager {
 			this.authData = authData;
 			this.reconnectRequired = reconnectRequired;
 
+			if (connectionStateSubject.getValue() == ConnectionState.CONNECTING || connectionStateSubject.getValue() == ConnectionState.CONNECTED) {
+				emitter.tryOnError(new IllegalStateException("Trying to connect with incorrect state! " + connectionStateSubject.getValue()));
+				return;
+			}
+
+			connectionStateSubject.onNext(ConnectionState.CONNECTING);
 			try {
 				lastVisitorToken = auth(touchpoint, authData.visitorToken, deviceToken, deviceType, authData.customVisitorToken);
 			} catch (Exception e) {
+				connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
 				emitter.tryOnError(e);
 				return;
 			}
@@ -195,25 +200,40 @@ public final class NetworkManager {
 	public Single<String> connect(@Nullable String visitorToken,
 								  AuthTokenType authTokenType,
 								  boolean reconnectRequired) {
-		return Single.fromCallable(() -> {
+		return Single.create(emitter -> {
 			this.reconnectRequired = reconnectRequired;
+
+			if (connectionStateSubject.getValue() == ConnectionState.CONNECTING || connectionStateSubject.getValue() == ConnectionState.CONNECTED) {
+				emitter.tryOnError(new IllegalStateException("Trying to connect with incorrect state! " + connectionStateSubject.getValue()));
+				return;
+			}
 
 			switch (authTokenType) {
 				case DEFAULT:
 					this.authData = AuthData.withVisitorToken(visitorToken);
-					lastVisitorToken = auth(touchpoint, authData.visitorToken, deviceToken, deviceType, authData.customVisitorToken);
 					break;
 				case CUSTOM:
 					if (visitorToken == null) {
-						throw new IllegalArgumentException("For AuthTokenType.CUSTOM visitorToken can't be null");
+						emitter.tryOnError(new IllegalArgumentException("For AuthTokenType.CUSTOM visitorToken can't be null"));
+						return;
 					}
 					this.authData = AuthData.withCustomVisitorToken(visitorToken);
-					lastVisitorToken = auth(touchpoint, authData.visitorToken, deviceToken, deviceType, authData.customVisitorToken);
 					break;
 			}
+
+			connectionStateSubject.onNext(ConnectionState.CONNECTING);
+
+			try {
+				lastVisitorToken = auth(touchpoint, authData.visitorToken, deviceToken, deviceType, authData.customVisitorToken);
+			} catch (Exception e) {
+				connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+				emitter.tryOnError(e);
+				return;
+			}
+
 			onVisitorTokenUpdated();
 			connectWebSocket();
-			return lastVisitorToken;
+			emitter.onSuccess(lastVisitorToken);
 		});
 	}
 
@@ -242,15 +262,15 @@ public final class NetworkManager {
 	}
 
 	private void connectWebSocket() {
+		if (lastVisitorToken == null) {
+			Log.e(TAG, "Connect: visitor token is null");
+			connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+			return;
+		}
 		if (webSocket != null) {
 			Log.e(TAG, "Connect: websocket is active!");
 			return;
 		}
-		if (lastVisitorToken == null) {
-			Log.e(TAG, "Connect: visitor token is null");
-			return;
-		}
-		connectionStateSubject.onNext(ConnectionState.CONNECTING);
 
 		String url = wsEndpoint.replace("{visitorToken}", lastVisitorToken);
 
@@ -258,40 +278,6 @@ public final class NetworkManager {
 				.url(url)
 				.build();
 		webSocket = okHttpManager.webSocketConnection(request, websocketListener);
-	}
-
-	private String auth(@NonNull AuthData authData) throws IOException {
-		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
-				.newBuilder()
-				.addQueryParameter("touchPoint", touchpoint);
-
-		if (!TextUtils.isEmpty(authData.visitorToken)) {
-			urlBuilder.addQueryParameter("visitorToken", authData.visitorToken);
-		}
-		if (!TextUtils.isEmpty(authData.customVisitorToken)) {
-			urlBuilder.addQueryParameter("customVisitorToken", authData.customVisitorToken);
-		}
-		if (!TextUtils.isEmpty(deviceToken)) {
-			urlBuilder.addQueryParameter("deviceToken", deviceToken);
-		}
-		if (!TextUtils.isEmpty(deviceType)) {
-			urlBuilder.addQueryParameter("deviceType", deviceType);
-		}
-		String url = urlBuilder.build().toString();
-
-		Request.Builder rb = new Request.Builder()
-				.url(url)
-				.get();
-
-		String response = okHttpManager.requestString(rb.build());
-		AuthResponseEntity responseEntity = new Gson().fromJson(response, AuthResponseEntity.class);
-		if (!TextUtils.isEmpty(responseEntity.endpoints.ws)) {
-			wsEndpoint = responseEntity.endpoints.ws;
-		}
-		if (!TextUtils.isEmpty(responseEntity.endpoints.upload)) {
-			uploadEndpoint = responseEntity.endpoints.upload;
-		}
-		return responseEntity.visitorToken;
 	}
 
 	private String auth(@NonNull String touchpoint,
@@ -343,7 +329,7 @@ public final class NetworkManager {
 						}
 
 						if (reconnectRequired) {
-							connectWebSocket();
+							websocketFailSubject.onNext(true);
 						}
 					}
 				}, thr -> Log.e(TAG, "disconnectEvent", thr)));
