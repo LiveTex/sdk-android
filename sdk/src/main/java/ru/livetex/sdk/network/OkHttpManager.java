@@ -16,7 +16,7 @@ final class OkHttpManager {
 	private static final long READ_TIMEOUT_SECONDS = 60;
 	private static final long WRITE_TIMEOUT_SECONDS = 30;
 
-	private static final long WEBSOCKET_PING_INTERVAL = 30_000L;
+	private static final long WEBSOCKET_PING_INTERVAL = 10_000L;
 
 	private final okhttp3.OkHttpClient client;
 	private final okhttp3.OkHttpClient webSocketClient;
