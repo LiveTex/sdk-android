@@ -6,7 +6,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
@@ -15,13 +15,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
-import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
-import io.reactivex.subjects.PublishSubject;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.WebSocket;
@@ -38,7 +36,7 @@ public final class NetworkManager {
 	private final LiveTexWebsocketListener websocketListener;
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
-	private final BehaviorSubject<Boolean> websocketFailSubject = BehaviorSubject.createDefault(false);
+	private final BehaviorSubject<Boolean> connectionFailSubject = BehaviorSubject.createDefault(false);
 	private final NetworkStateObserver networkStateObserver = new NetworkStateObserver();
 
 	public enum ConnectionState {
@@ -85,7 +83,7 @@ public final class NetworkManager {
 
 		subscribeToWebsocket();
 
-		disposables.add(Observable.combineLatest(networkStateObserver.status(), websocketFailSubject, Pair::new)
+		disposables.add(Observable.combineLatest(networkStateObserver.status(), connectionFailSubject, Pair::new)
 				.observeOn(Schedulers.io())
 				.map(pair -> pair.first)
 				.flatMapCompletable(status -> {
@@ -95,6 +93,7 @@ public final class NetworkManager {
 								authData != null) {
 							return connect(authData, true)
 									.ignoreElement()
+									.retry(thr -> thr instanceof SocketTimeoutException)
 									.onErrorComplete(thr -> {
 										Log.e(TAG, "networkStateObserver", thr);
 										return true;
@@ -106,7 +105,8 @@ public final class NetworkManager {
 						// More fast and reliable way then only listening websocket because websocket reaction can be delayed.
 						if (webSocket != null) {
 							Log.i(TAG, "Disconnecting websocket (network state)");
-							webSocket.close(1000, "disconnect requested");
+							// Forced connection close
+							webSocket.cancel();
 							webSocket = null;
 						}
 						if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
@@ -329,7 +329,7 @@ public final class NetworkManager {
 						}
 
 						if (reconnectRequired) {
-							websocketFailSubject.onNext(true);
+							connectionFailSubject.onNext(true);
 						}
 					}
 				}, thr -> Log.e(TAG, "disconnectEvent", thr)));
@@ -359,7 +359,7 @@ public final class NetworkManager {
 						if (needReconnect) {
 							disposables.add(Single.timer(3, TimeUnit.SECONDS)
 									.subscribe(ignore -> {
-										websocketFailSubject.onNext(true);
+										connectionFailSubject.onNext(true);
 									}, thr1 -> Log.e(TAG, "reconnect", thr1)));
 						} else {
 							// Reconnect should be done later manually or by network state observer
