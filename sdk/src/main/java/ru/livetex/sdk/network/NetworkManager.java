@@ -3,6 +3,7 @@ package ru.livetex.sdk.network;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.Pair;
 
 import java.io.IOException;
 import java.util.concurrent.Executors;
@@ -20,6 +21,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
+import io.reactivex.subjects.PublishSubject;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.WebSocket;
@@ -37,6 +39,7 @@ public final class NetworkManager {
 	private static final Scheduler connectionScheduler = Schedulers.from(Executors.newSingleThreadExecutor());
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
+	private final BehaviorSubject<Boolean> websocketFailSubject = BehaviorSubject.createDefault(false);
 	private final NetworkStateObserver networkStateObserver = new NetworkStateObserver();
 
 	public enum ConnectionState {
@@ -83,16 +86,17 @@ public final class NetworkManager {
 
 		subscribeToWebsocket();
 
-		disposables.add(networkStateObserver.status()
+		disposables.add(Observable.combineLatest(networkStateObserver.status(), websocketFailSubject, Pair::new)
 				.subscribeOn(connectionScheduler)
 				.observeOn(connectionScheduler)
+				.map(pair -> pair.first)
 				.flatMapCompletable(status -> {
 					if (status == NetworkStateObserver.InternetConnectionStatus.CONNECTED) {
 						if (reconnectRequired &&
 								connectionStateSubject.getValue() == ConnectionState.DISCONNECTED &&
 								authData != null) {
 							return connect(authData, true)
-									.retry(3)
+									.retry(1)
 									.ignoreElement()
 									.onErrorComplete(thr -> {
 										Log.e(TAG, "networkStateObserver", thr);
@@ -107,7 +111,9 @@ public final class NetworkManager {
 							Log.i(TAG, "Disconnecting websocket (network state)");
 							webSocket.close(1000, "disconnect requested");
 						}
-						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+						if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
+							connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+						}
 						return Completable.complete();
 					}
 				})
@@ -227,7 +233,9 @@ public final class NetworkManager {
 		if (webSocket != null) {
 			Log.i(TAG, "Disconnecting websocket...");
 			webSocket.close(1000, "disconnect requested");
-			connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+			if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
+				connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+			}
 		} else {
 			Log.i(TAG, "Websocket disconnect requested but websocket is null");
 		}
@@ -330,7 +338,9 @@ public final class NetworkManager {
 				.subscribe(ws -> {
 					if (ws == webSocket) {
 						webSocket = null;
-						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+						if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
+							connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+						}
 
 						if (reconnectRequired) {
 							connectWebSocket();
@@ -354,15 +364,16 @@ public final class NetworkManager {
 
 					if (ws == webSocket) {
 						webSocket = null;
-						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						boolean needReconnectNow = reconnectRequired && networkStateObserver.getStatus() == NetworkStateObserver.InternetConnectionStatus.CONNECTED;
+						if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
+							connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+						}
+						boolean needReconnect = reconnectRequired && networkStateObserver.getStatus() == NetworkStateObserver.InternetConnectionStatus.CONNECTED;
 
 						// Can be endless loop, so handle only SocketTimeoutException
-						if (needReconnectNow) {
+						if (needReconnect) {
 							disposables.add(Single.timer(3, TimeUnit.SECONDS)
-									.observeOn(Schedulers.io())
 									.subscribe(ignore -> {
-										connectWebSocket();
+										websocketFailSubject.onNext(true);
 									}, thr1 -> Log.e(TAG, "reconnect", thr1)));
 						} else {
 							// Reconnect should be done later manually or by network state observer
