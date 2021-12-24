@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.Gson;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
+import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.internal.functions.Functions;
@@ -32,6 +34,7 @@ public final class NetworkManager {
 	private final OkHttpManager okHttpManager;
 	private final ApiManager apiManager;
 	private final LiveTexWebsocketListener websocketListener;
+	private static final Scheduler connectionScheduler = Schedulers.from(Executors.newSingleThreadExecutor());
 	private final CompositeDisposable disposables = new CompositeDisposable();
 	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
 	private final NetworkStateObserver networkStateObserver = new NetworkStateObserver();
@@ -81,19 +84,30 @@ public final class NetworkManager {
 		subscribeToWebsocket();
 
 		disposables.add(networkStateObserver.status()
-				.filter(status -> status == NetworkStateObserver.InternetConnectionStatus.CONNECTED)
-				.observeOn(Schedulers.io())
+				.subscribeOn(connectionScheduler)
+				.observeOn(connectionScheduler)
 				.flatMapCompletable(status -> {
-					if (reconnectRequired &&
-							connectionStateSubject.getValue() == ConnectionState.DISCONNECTED &&
-							authData != null) {
-						return connect(authData, true)
-								.ignoreElement()
-								.onErrorComplete(thr -> {
-									Log.e(TAG, "networkStateObserver", thr);
-									return true;
-								});
+					if (status == NetworkStateObserver.InternetConnectionStatus.CONNECTED) {
+						if (reconnectRequired &&
+								connectionStateSubject.getValue() == ConnectionState.DISCONNECTED &&
+								authData != null) {
+							return connect(authData, true)
+									.retry(3)
+									.ignoreElement()
+									.onErrorComplete(thr -> {
+										Log.e(TAG, "networkStateObserver", thr);
+										return true;
+									});
+						} else {
+							return Completable.complete();
+						}
 					} else {
+						// More fast and reliable way then only listening websocket because websocket reaction can be delayed.
+						if (webSocket != null) {
+							Log.i(TAG, "Disconnecting websocket (network state)");
+							webSocket.close(1000, "disconnect requested");
+						}
+						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
 						return Completable.complete();
 					}
 				})
