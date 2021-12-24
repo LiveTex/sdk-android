@@ -10,7 +10,7 @@ public class AuthData {
 	@Nullable
 	public final String customVisitorToken;
 
-	public AuthData(@Nullable String visitorToken,
+	private AuthData(@Nullable String visitorToken,
 					@Nullable String customVisitorToken) {
 		this.visitorToken = visitorToken;
 		this.customVisitorToken = customVisitorToken;

@@ -166,7 +166,7 @@ public final class NetworkManager {
 
 	/**
 	 * Do authorization and connect to chat websocket.
-	 * @param visitorToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
+	 * @param visitorToken - token (or id) which identifies a current user. Can be null if AuthTokenType.DEFAULT and user is new. For AuthTokenType.CUSTOM it should be user id in your system.
 	 * @param authTokenType - AuthTokenType.DEFAULT for standard (LiveTex) token system.
 	 * @param reconnectRequired - set true to automatically reconnect (auth + websocket).
 	 * @return newly generated visitorToken if param was null, or same visitorToken which was provided
@@ -176,17 +176,21 @@ public final class NetworkManager {
 								  AuthTokenType authTokenType,
 								  boolean reconnectRequired) {
 		return Single.fromCallable(() -> {
+			this.reconnectRequired = reconnectRequired;
+
 			switch (authTokenType) {
 				case DEFAULT:
 					this.authData = AuthData.withVisitorToken(visitorToken);
-					lastVisitorToken = auth(touchpoint, visitorToken, deviceToken, deviceType, null);
+					lastVisitorToken = auth(touchpoint, authData.visitorToken, deviceToken, deviceType, authData.customVisitorToken);
 					break;
 				case CUSTOM:
+					if (visitorToken == null) {
+						throw new IllegalArgumentException("For AuthTokenType.CUSTOM visitorToken can't be null");
+					}
 					this.authData = AuthData.withCustomVisitorToken(visitorToken);
-					lastVisitorToken = auth(touchpoint, null, deviceToken, deviceType, visitorToken);
+					lastVisitorToken = auth(touchpoint, authData.visitorToken, deviceToken, deviceType, authData.customVisitorToken);
 					break;
 			}
-			this.reconnectRequired = reconnectRequired;
 			onVisitorTokenUpdated();
 			connectWebSocket();
 			return lastVisitorToken;
