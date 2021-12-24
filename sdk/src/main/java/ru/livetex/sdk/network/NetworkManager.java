@@ -102,16 +102,10 @@ public final class NetworkManager {
 							return Completable.complete();
 						}
 					} else {
-						// More fast and reliable way then only listening websocket because websocket reaction can be delayed.
-						if (webSocket != null) {
-							Log.i(TAG, "Disconnecting websocket (network state)");
-							// Forced connection close
-							webSocket.cancel();
-							webSocket = null;
-						}
-						if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
-							connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						}
+						// Websocket reaction can be delayed but it's a traditional way to properly finish connection. So don't force to close.
+//						if (connectionStateSubject.getValue() != ConnectionState.DISCONNECTED) {
+//							connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
+//						}
 						return Completable.complete();
 					}
 				})
