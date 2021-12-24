@@ -11,9 +11,11 @@ import com.google.gson.Gson;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.internal.functions.Functions;
 import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subjects.BehaviorSubject;
 import okhttp3.HttpUrl;
@@ -31,6 +33,8 @@ public final class NetworkManager {
 	private final ApiManager apiManager;
 	private final LiveTexWebsocketListener websocketListener;
 	private final CompositeDisposable disposables = new CompositeDisposable();
+	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
+	private final NetworkStateObserver networkStateObserver = new NetworkStateObserver();
 
 	public enum ConnectionState {
 		NOT_STARTED, // initial state
@@ -54,10 +58,10 @@ public final class NetworkManager {
 	@Nullable
 	private String lastVisitorToken = null;
 	@Nullable
+	private AuthData authData = null;
+	@Nullable
 	private WebSocket webSocket = null;
-	private boolean websocketReconnectRequired = true;
-	private final BehaviorSubject<ConnectionState> connectionStateSubject = BehaviorSubject.createDefault(ConnectionState.NOT_STARTED);
-	private final NetworkStateObserver networkStateObserver = new NetworkStateObserver();
+	private boolean reconnectRequired = true;
 
 	private NetworkManager(@NonNull String host,
 						   @NonNull String touchpoint,
@@ -73,16 +77,27 @@ public final class NetworkManager {
 		this.okHttpManager = new OkHttpManager(isNetworkLoggingEnabled);
 		this.apiManager = new ApiManager(okHttpManager);
 		this.websocketListener = LiveTex.getInstance().getWebsocketListener();
+
 		subscribeToWebsocket();
 
 		disposables.add(networkStateObserver.status()
 				.filter(status -> status == NetworkStateObserver.InternetConnectionStatus.CONNECTED)
 				.observeOn(Schedulers.io())
-				.subscribe(status -> {
-					if (websocketReconnectRequired && connectionStateSubject.getValue() == ConnectionState.DISCONNECTED) {
-						connectWebSocket();
+				.flatMapCompletable(status -> {
+					if (reconnectRequired &&
+							connectionStateSubject.getValue() == ConnectionState.DISCONNECTED &&
+							authData != null) {
+						return connect(authData, true)
+								.ignoreElement()
+								.onErrorComplete(thr -> {
+									Log.e(TAG, "networkStateObserver", thr);
+									return true;
+								});
+					} else {
+						return Completable.complete();
 					}
-				}, thr -> Log.e(TAG, "networkStateObserver", thr)));
+				})
+				.subscribe(Functions.EMPTY_ACTION, thr -> Log.e(TAG, "networkStateObserver", thr)));
 	}
 
 	public static void init(@NonNull String host,
@@ -115,10 +130,35 @@ public final class NetworkManager {
 
 	/**
 	 * Do authorization and connect to chat websocket.
-	 * @param visitorToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
-	 * @param authTokenType - AuthTokenType.DEFAULT for standard (LiveTex) token system.
+	 * @param authData user data for authorization.
+	 * @param reconnectRequired set true (recommended) to automatically reconnect (auth + websocket).
+	 * @return newly generated visitorToken if token in AuthData was null, or same token which was provided
+	 */
+	public Single<String> connect(@NonNull AuthData authData, boolean reconnectRequired) {
+		return Single.create(emitter -> {
+			this.authData = authData;
+			this.reconnectRequired = reconnectRequired;
+
+			try {
+				lastVisitorToken = auth(touchpoint, authData.visitorToken, deviceToken, deviceType, authData.customVisitorToken);
+			} catch (Exception e) {
+				emitter.tryOnError(e);
+				return;
+			}
+
+			onVisitorTokenUpdated();
+			connectWebSocket();
+			emitter.onSuccess(lastVisitorToken);
+		});
+	}
+
+	/**
+	 * Do authorization and connect to chat websocket.
+	 * @param visitorToken token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
+	 * @param authTokenType AuthTokenType.DEFAULT for standard (LiveTex) token system.
 	 * @return newly generated visitorToken if param was null, or same visitorToken which was provided
 	 */
+	@Deprecated
 	public Single<String> connect(@Nullable String visitorToken,
 								  AuthTokenType authTokenType) {
 		return connect(visitorToken, authTokenType, true);
@@ -128,23 +168,26 @@ public final class NetworkManager {
 	 * Do authorization and connect to chat websocket.
 	 * @param visitorToken - token (or id) which identifies a current user. Can be null if user is new. For AuthTokenType.CUSTOM it should be user id in your system.
 	 * @param authTokenType - AuthTokenType.DEFAULT for standard (LiveTex) token system.
-	 * @param websocketReconnectRequired - set true to automatically reconnect websocket. Works only if auth was successful and websocket was established.
-	 *                                      For full reconnect with auth you need implement your own logic based on network state observe.
+	 * @param reconnectRequired - set true to automatically reconnect (auth + websocket).
 	 * @return newly generated visitorToken if param was null, or same visitorToken which was provided
 	 */
+	@Deprecated
 	public Single<String> connect(@Nullable String visitorToken,
 								  AuthTokenType authTokenType,
-								  boolean websocketReconnectRequired) {
+								  boolean reconnectRequired) {
 		return Single.fromCallable(() -> {
+			String lastVisitorToken = null;
 			switch (authTokenType) {
 				case DEFAULT:
+					this.authData = AuthData.withVisitorToken(visitorToken);
 					lastVisitorToken = auth(touchpoint, visitorToken, deviceToken, deviceType, null);
 					break;
 				case CUSTOM:
+					this.authData = AuthData.withCustomVisitorToken(visitorToken);
 					lastVisitorToken = auth(touchpoint, null, deviceToken, deviceType, visitorToken);
 					break;
 			}
-			this.websocketReconnectRequired = websocketReconnectRequired;
+			this.reconnectRequired = reconnectRequired;
 			onVisitorTokenUpdated();
 			connectWebSocket();
 			return lastVisitorToken;
@@ -161,7 +204,8 @@ public final class NetworkManager {
 	}
 
 	public void forceDisconnect() {
-		websocketReconnectRequired = false;
+		reconnectRequired = false;
+		authData = null;
 
 		if (webSocket != null) {
 			Log.i(TAG, "Disconnecting websocket...");
@@ -189,6 +233,40 @@ public final class NetworkManager {
 				.url(url)
 				.build();
 		webSocket = okHttpManager.webSocketConnection(request, websocketListener);
+	}
+
+	private String auth(@NonNull AuthData authData) throws IOException {
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
+				.newBuilder()
+				.addQueryParameter("touchPoint", touchpoint);
+
+		if (!TextUtils.isEmpty(authData.visitorToken)) {
+			urlBuilder.addQueryParameter("visitorToken", authData.visitorToken);
+		}
+		if (!TextUtils.isEmpty(authData.customVisitorToken)) {
+			urlBuilder.addQueryParameter("customVisitorToken", authData.customVisitorToken);
+		}
+		if (!TextUtils.isEmpty(deviceToken)) {
+			urlBuilder.addQueryParameter("deviceToken", deviceToken);
+		}
+		if (!TextUtils.isEmpty(deviceType)) {
+			urlBuilder.addQueryParameter("deviceType", deviceType);
+		}
+		String url = urlBuilder.build().toString();
+
+		Request.Builder rb = new Request.Builder()
+				.url(url)
+				.get();
+
+		String response = okHttpManager.requestString(rb.build());
+		AuthResponseEntity responseEntity = new Gson().fromJson(response, AuthResponseEntity.class);
+		if (!TextUtils.isEmpty(responseEntity.endpoints.ws)) {
+			wsEndpoint = responseEntity.endpoints.ws;
+		}
+		if (!TextUtils.isEmpty(responseEntity.endpoints.upload)) {
+			uploadEndpoint = responseEntity.endpoints.upload;
+		}
+		return responseEntity.visitorToken;
 	}
 
 	private String auth(@NonNull String touchpoint,
@@ -237,7 +315,7 @@ public final class NetworkManager {
 						webSocket = null;
 						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
 
-						if (websocketReconnectRequired) {
+						if (reconnectRequired) {
 							connectWebSocket();
 						}
 					}
@@ -260,7 +338,7 @@ public final class NetworkManager {
 					if (ws == webSocket) {
 						webSocket = null;
 						connectionStateSubject.onNext(ConnectionState.DISCONNECTED);
-						boolean needReconnectNow = websocketReconnectRequired && networkStateObserver.getStatus() == NetworkStateObserver.InternetConnectionStatus.CONNECTED;
+						boolean needReconnectNow = reconnectRequired && networkStateObserver.getStatus() == NetworkStateObserver.InternetConnectionStatus.CONNECTED;
 
 						// Can be endless loop, so handle only SocketTimeoutException
 						if (needReconnectNow) {
