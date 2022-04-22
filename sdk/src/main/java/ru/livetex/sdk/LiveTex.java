@@ -41,6 +41,8 @@ public final class LiveTex {
 		@NonNull
 		private String host = "visitor-api.livetex.ru/";
 		@NonNull
+		private String authEndpoint = "https://visitor-api.livetex.ru/v1/auth";
+		@NonNull
 		private final String touchpoint;
 		@Nullable
 		private String deviceToken = null;
@@ -59,10 +61,19 @@ public final class LiveTex {
 
 		/**
 		 * Set custom host in format "[subdomain.]domain.zone/"
-		 * Host used for auth request and for websocket connection (but can be changed by auth response)
+		 * Host used for for websocket connection (mostly can be changed by auth response) and files upload
 		 */
 		public Builder setHost(@NonNull String host) {
 			this.host = host;
+			return this;
+		}
+
+		/**
+		 * Set custom auth endpoint like "https://visitor-api.livetex.ru/v1/auth"
+		 * Used for auth request
+		 */
+		public Builder setAuthEndpoint(@NonNull String authEndpoint) {
+			this.authEndpoint = authEndpoint;
 			return this;
 		}
 
@@ -108,7 +119,7 @@ public final class LiveTex {
 
 		public void build() {
 			instance = new LiveTex(this);
-			NetworkManager.init(host, touchpoint, deviceToken, deviceType, isNetworkLoggingEnabled);
+			NetworkManager.init(host, authEndpoint, touchpoint, deviceToken, deviceType, isNetworkLoggingEnabled);
 			messageHandler.init(isWebsocketLoggingEnabled);
 			websocketListener.init();
 		}

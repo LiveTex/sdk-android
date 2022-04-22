@@ -47,8 +47,8 @@ public final class NetworkManager {
 	}
 
 	// Endpoint for auth request.
-	private final String authHost;
-	// Endpoint for web socket connection. Can be changed by auth response.
+	private final String authEndpoint;
+	// Endpoint for web socket connection. Will be changed by auth response.
 	private String wsEndpoint;
 	// Endpoint for file upload. Can be changed by auth response.
 	private String uploadEndpoint;
@@ -67,12 +67,13 @@ public final class NetworkManager {
 	private boolean reconnectRequired = true;
 
 	private NetworkManager(@NonNull String host,
+						   @NonNull String authEndpoint,
 						   @NonNull String touchpoint,
 						   @Nullable String deviceToken,
 						   @Nullable String deviceType,
 						   boolean isNetworkLoggingEnabled) {
-		this.authHost = "https://" + host + "v1/";
-		this.wsEndpoint = "wss://" + host + "v1/ws/{visitorToken}";
+		this.authEndpoint = authEndpoint;
+		this.wsEndpoint = "wss://" + host + "v1/ws/{visitorToken}"; // just a placeholder, will be replaced by auth response
 		this.uploadEndpoint = "https://" + host + "v1/upload";
 		this.touchpoint = touchpoint;
 		this.deviceToken = deviceToken;
@@ -113,11 +114,12 @@ public final class NetworkManager {
 	}
 
 	public static void init(@NonNull String host,
+							@NonNull String authEndpoint,
 							@NonNull String touchpoint,
 							String deviceToken,
 							String deviceType,
 							boolean isNetworkLoggingEnabled) {
-		instance = new NetworkManager(host, touchpoint, deviceToken, deviceType, isNetworkLoggingEnabled);
+		instance = new NetworkManager(host, authEndpoint, touchpoint, deviceToken, deviceType, isNetworkLoggingEnabled);
 	}
 
 	public static NetworkManager getInstance() {
@@ -279,7 +281,7 @@ public final class NetworkManager {
 						@Nullable String deviceToken,
 						@Nullable String deviceType,
 						@Nullable String customVisitorToken) throws IOException {
-		HttpUrl.Builder urlBuilder = HttpUrl.parse(authHost + "auth")
+		HttpUrl.Builder urlBuilder = HttpUrl.parse(authEndpoint)
 				.newBuilder()
 				.addQueryParameter("touchPoint", touchpoint);
 
