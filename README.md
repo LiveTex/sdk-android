@@ -51,7 +51,7 @@ dependencies {
 new LiveTex.Builder(Const.TOUCHPOINT).build();
 ```
 
-Укажите Touchpoint (берется в личном кабинете).
+Укажите Touchpoint (берется в личном кабинете). Если у вас свой эндпоинт авторизации, укажите его через setAuthEndpoint(endpoint).
 
 Далее можно обращаться к синглтону через `LiveTex.getInstance()`.
 
