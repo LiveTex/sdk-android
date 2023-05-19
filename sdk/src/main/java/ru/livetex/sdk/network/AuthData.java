@@ -31,4 +31,13 @@ public class AuthData {
 	public static AuthData withCustomVisitorToken(@NonNull String customVisitorToken) {
 		return new AuthData(null, customVisitorToken);
 	}
+
+	/**
+	 * Special case - when you want to preserve user previous data with visitorToken and continue to work with your users system.
+	 * @param visitorToken - token which were used to identify a user in past. Can't be null here.
+	 * @param customVisitorToken - some unique token (or id) which now identifies a current user in your system. Can't be null.
+	 */
+	public static AuthData withVisitorAndCustomTokens(@NonNull String visitorToken, @NonNull String customVisitorToken) {
+		return new AuthData(visitorToken, customVisitorToken);
+	}
 }

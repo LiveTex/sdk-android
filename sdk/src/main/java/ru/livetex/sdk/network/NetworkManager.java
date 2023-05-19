@@ -179,7 +179,7 @@ public final class NetworkManager {
 	 * @param authTokenType AuthTokenType.DEFAULT for standard (LiveTex) token system.
 	 * @return newly generated visitorToken if param was null, or same visitorToken which was provided
 	 */
-	@Deprecated
+	@Deprecated // Use connect with AuthData instead
 	public Single<String> connect(@Nullable String visitorToken,
 								  AuthTokenType authTokenType) {
 		return connect(visitorToken, authTokenType, true);
@@ -192,7 +192,7 @@ public final class NetworkManager {
 	 * @param reconnectRequired - set true to automatically reconnect (auth + websocket).
 	 * @return newly generated visitorToken if param was null, or same visitorToken which was provided
 	 */
-	@Deprecated
+	@Deprecated // Use connect with AuthData instead
 	public Single<String> connect(@Nullable String visitorToken,
 								  AuthTokenType authTokenType,
 								  boolean reconnectRequired) {
