@@ -12,7 +12,7 @@ public final class HistoryEntity extends BaseEntity {
 	@NonNull
 	public Date createdAt;
 	@NonNull
-	public transient List<GenericMessage> messages = new ArrayList<>();
+	public List<GenericMessage> messages = new ArrayList<>();
 
 	@Override
 	protected String getType() {

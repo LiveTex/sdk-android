@@ -17,6 +17,7 @@ import ru.livetex.sdk.entity.AttributesEntity;
 import ru.livetex.sdk.entity.AttributesRequest;
 import ru.livetex.sdk.entity.BaseEntity;
 import ru.livetex.sdk.entity.Bot;
+import ru.livetex.sdk.entity.Creator;
 import ru.livetex.sdk.entity.Department;
 import ru.livetex.sdk.entity.DepartmentRequestEntity;
 import ru.livetex.sdk.entity.DialogState;
@@ -36,6 +37,8 @@ public class EntityMapper {
 
 	public final static Gson gson = new GsonBuilder()
 			.registerTypeAdapter(BaseEntity.class, new LivetexTypeModelDeserializer())
+			.registerTypeAdapter(GenericMessage.class, new LivetexGenericMessageDeserializer())
+			.registerTypeAdapter(Creator.class, new LivetexCreatorDeserializer())
 			.create();
 
 	public BaseEntity toEntity(String jsonStr) {
@@ -56,12 +59,12 @@ public class EntityMapper {
 				case DialogState.TYPE: {
 					return gson.fromJson(json, DialogState.class);
 				}
-				case TextMessage.TYPE: {
-					return parseTextMessage(json);
-				}
-				case FileMessage.TYPE: {
-					return parseFileMessage(json);
-				}
+//				case TextMessage.TYPE: {
+//					return parseTextMessage(json);
+//				}
+//				case FileMessage.TYPE: {
+//					return parseFileMessage(json);
+//				}
 				case TypingEvent.TYPE: {
 					return gson.fromJson(json, TypingEvent.class);
 				}
@@ -83,29 +86,29 @@ public class EntityMapper {
 				case HistoryEntity.TYPE: {
 					HistoryEntity history = gson.fromJson(json, HistoryEntity.class);
 
-					JsonArray messages = jsonObject.getAsJsonArray("messages");
-
-					for (int i = 0; i < messages.size(); i++) {
-						JsonElement message = messages.get(i);
-
-						String msgType = message.getAsJsonObject().get("type").getAsString();
-						GenericMessage msg = null;
-
-						switch (msgType) {
-							case TextMessage.TYPE: {
-								msg = parseTextMessage(message);
-								break;
-							}
-							case FileMessage.TYPE: {
-								msg = parseFileMessage(message);
-								break;
-							}
-						}
-
-						if (msg != null) {
-							history.messages.add(msg);
-						}
-					}
+//					JsonArray messages = jsonObject.getAsJsonArray("messages");
+//
+//					for (int i = 0; i < messages.size(); i++) {
+//						JsonElement message = messages.get(i);
+//
+//						String msgType = message.getAsJsonObject().get("type").getAsString();
+//						GenericMessage msg = null;
+//
+//						switch (msgType) {
+//							case TextMessage.TYPE: {
+//								msg = parseTextMessage(message);
+//								break;
+//							}
+//							case FileMessage.TYPE: {
+//								msg = parseFileMessage(message);
+//								break;
+//							}
+//						}
+//
+//						if (msg != null) {
+//							history.messages.add(msg);
+//						}
+//					}
 
 					return history;
 				}
@@ -118,44 +121,60 @@ public class EntityMapper {
 				}
 			}
 		}
+	}
+
+	static class LivetexGenericMessageDeserializer implements JsonDeserializer<GenericMessage> {
+		@Override
+		public GenericMessage deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+			String msgType = json.getAsJsonObject().get("type").getAsString();
+			GenericMessage msg = null;
+
+			switch (msgType) {
+				case TextMessage.TYPE: {
+					msg = parseTextMessage(json);
+					break;
+				}
+				case FileMessage.TYPE: {
+					msg = parseFileMessage(json);
+					break;
+				}
+			}
+
+			return msg;
+		}
 
 		private TextMessage parseTextMessage(JsonElement json) {
 			TextMessage message = gson.fromJson(json, TextMessage.class);
-			parseCreator(message, json);
 			return message;
 		}
 
 		private FileMessage parseFileMessage(JsonElement json) {
 			FileMessage message = gson.fromJson(json, FileMessage.class);
-			parseCreator(message, json);
 			return message;
 		}
+	}
 
-		private void parseCreator(GenericMessage message, JsonElement json) {
-			JsonObject jsonObject = json.getAsJsonObject();
-
-			JsonObject creator = jsonObject.getAsJsonObject("creator");
-			String creatorType = creator.get("type").getAsString();
+	static class LivetexCreatorDeserializer implements JsonDeserializer<Creator> {
+		@Override
+		public Creator deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+			JsonObject obj = json.getAsJsonObject();
+			String creatorType = obj.get("type").getAsString();
 
 			switch (creatorType) {
 				case Employee.TYPE: {
-					JsonObject creatorObject = creator.getAsJsonObject("employee");
-					message.setCreator(gson.fromJson(creatorObject, Employee.class));
-					break;
+					return gson.fromJson(obj, Employee.class);
 				}
 				case Visitor.TYPE: {
-					message.setCreator(gson.fromJson(creator, Visitor.class));
-					break;
+					return gson.fromJson(obj, Visitor.class);
 				}
 				case SystemUser.TYPE: {
-					message.setCreator(gson.fromJson(creator, SystemUser.class));
-					break;
+					return gson.fromJson(obj, SystemUser.class);
 				}
 				case Bot.TYPE: {
-					message.setCreator(gson.fromJson(creator, Bot.class));
-					break;
+					return gson.fromJson(obj, Bot.class);
 				}
 			}
+			return null;
 		}
 	}
 }

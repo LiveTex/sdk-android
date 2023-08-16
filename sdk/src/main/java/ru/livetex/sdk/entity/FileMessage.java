@@ -17,7 +17,7 @@ public final class FileMessage extends BaseEntity implements GenericMessage {
 	@NonNull
 	public Date createdAt; // timestamp in millis
 	@NonNull
-	public transient Creator creator;
+	public Creator creator;
 
 	public FileMessage(FileUploadedResponse response) {
 		super();
