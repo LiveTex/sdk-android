@@ -16,7 +16,7 @@ public final class TextMessage extends BaseEntity implements GenericMessage {
 	@NonNull
 	public Date createdAt;
 	@NonNull
-	public transient Creator creator;
+	public Creator creator;
 	// Related to custom project logic
 	@Nullable
 	public Map<String, String> attributes = null;
