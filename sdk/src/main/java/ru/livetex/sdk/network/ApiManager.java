@@ -10,6 +10,8 @@ import android.webkit.MimeTypeMap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Objects;
 
 import com.google.gson.Gson;
@@ -57,9 +59,11 @@ public final class ApiManager {
 				return;
 			}
 
+			String encodedFilename= URLEncoder.encode(file.getName(), "UTF-8");
+
 			RequestBody requestBody = new MultipartBody.Builder()
 					.setType(MultipartBody.FORM)
-					.addFormDataPart("fileUpload", file.getName(),
+					.addFormDataPart("fileUpload", encodedFilename,
 							RequestBody.create(MediaType.parse("text/plain"), file))
 					.build();
 
@@ -178,12 +182,13 @@ public final class ApiManager {
 			InputStreamProvider inputStreamProvider,
 			@Nullable MediaType mediaType,
 			SingleEmitter<FileUploadedResponse> emitter
-	) {
+	) throws UnsupportedEncodingException {
+		String encodedFilename= URLEncoder.encode(fileName, "UTF-8");
 		RequestBody requestBody = new MultipartBody.Builder()
 				.setType(MultipartBody.FORM)
 				.addFormDataPart(
 						"fileUpload",
-						fileName,
+						encodedFilename,
 						new RequestBody() {
 							@Override
 							public MediaType contentType() {
