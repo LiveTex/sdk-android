@@ -1,3 +1,6 @@
+# preserve entities
+-keep class ru.livetex.sdk.entity.** { *; }
+
 # --- OkHttp
 # JSR 305 annotations are for embedding nullability information.
 -dontwarn javax.annotation.**
