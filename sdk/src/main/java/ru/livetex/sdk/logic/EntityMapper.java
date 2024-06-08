@@ -39,6 +39,7 @@ public class EntityMapper {
 			.registerTypeAdapter(BaseEntity.class, new LivetexTypeModelDeserializer())
 			.registerTypeAdapter(GenericMessage.class, new LivetexGenericMessageDeserializer())
 			.registerTypeAdapter(Creator.class, new LivetexCreatorDeserializer())
+			.registerTypeAdapter(DialogState.class, new LivetexDialogStateDeserializer())
 			.create();
 
 	public BaseEntity toEntity(String jsonStr) {
@@ -59,12 +60,6 @@ public class EntityMapper {
 				case DialogState.TYPE: {
 					return gson.fromJson(json, DialogState.class);
 				}
-//				case TextMessage.TYPE: {
-//					return parseTextMessage(json);
-//				}
-//				case FileMessage.TYPE: {
-//					return parseFileMessage(json);
-//				}
 				case TypingEvent.TYPE: {
 					return gson.fromJson(json, TypingEvent.class);
 				}
@@ -85,31 +80,6 @@ public class EntityMapper {
 				}
 				case HistoryEntity.TYPE: {
 					HistoryEntity history = gson.fromJson(json, HistoryEntity.class);
-
-//					JsonArray messages = jsonObject.getAsJsonArray("messages");
-//
-//					for (int i = 0; i < messages.size(); i++) {
-//						JsonElement message = messages.get(i);
-//
-//						String msgType = message.getAsJsonObject().get("type").getAsString();
-//						GenericMessage msg = null;
-//
-//						switch (msgType) {
-//							case TextMessage.TYPE: {
-//								msg = parseTextMessage(message);
-//								break;
-//							}
-//							case FileMessage.TYPE: {
-//								msg = parseFileMessage(message);
-//								break;
-//							}
-//						}
-//
-//						if (msg != null) {
-//							history.messages.add(msg);
-//						}
-//					}
-
 					return history;
 				}
 				case EmployeeTypingEvent.TYPE: {
@@ -162,6 +132,10 @@ public class EntityMapper {
 
 			switch (creatorType) {
 				case Employee.TYPE: {
+					if (obj.has("employee")) {
+						// temporary solution
+						return gson.fromJson(obj.get("employee"), Employee.class);
+					}
 					return gson.fromJson(obj, Employee.class);
 				}
 				case Visitor.TYPE: {
@@ -175,6 +149,24 @@ public class EntityMapper {
 				}
 			}
 			return null;
+		}
+	}
+
+	static class LivetexDialogStateDeserializer implements JsonDeserializer<DialogState> {
+		@Override
+		public DialogState deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+			JsonObject obj = json.getAsJsonObject();
+			Gson tempGson = new GsonBuilder().create();
+			DialogState result = tempGson.fromJson(json, DialogState.class);
+
+
+			JsonObject employee = obj.get("employee").getAsJsonObject();
+			if (employee.has("employee")) {
+				// temporary solution
+				result.employee = gson.fromJson(employee.get("employee"), Employee.class);
+			}
+
+			return result;
 		}
 	}
 }
