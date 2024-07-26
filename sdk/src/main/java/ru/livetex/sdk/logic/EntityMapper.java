@@ -159,11 +159,13 @@ public class EntityMapper {
 			Gson tempGson = new GsonBuilder().create();
 			DialogState result = tempGson.fromJson(json, DialogState.class);
 
-
-			JsonObject employee = obj.get("employee").getAsJsonObject();
-			if (employee.has("employee")) {
-				// temporary solution
-				result.employee = gson.fromJson(employee.get("employee"), Employee.class);
+			// temporary solution
+			if (obj.has("employee")) {
+				JsonObject employee = obj.get("employee").getAsJsonObject();
+				if (employee.has("employee")) {
+					// temporary solution
+					result.employee = gson.fromJson(employee.get("employee"), Employee.class);
+				}
 			}
 
 			return result;
