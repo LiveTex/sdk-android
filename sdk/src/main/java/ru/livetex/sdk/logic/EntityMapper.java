@@ -132,7 +132,7 @@ public class EntityMapper {
 
 			switch (creatorType) {
 				case Employee.TYPE: {
-					if (obj.has("employee")) {
+					if (obj.has("employee") && !obj.isJsonNull()) {
 						// temporary solution
 						return gson.fromJson(obj.get("employee"), Employee.class);
 					}
@@ -160,7 +160,7 @@ public class EntityMapper {
 			DialogState result = tempGson.fromJson(json, DialogState.class);
 
 			// temporary solution
-			if (obj.has("employee")) {
+			if (obj.has("employee") && !obj.isJsonNull()) {
 				JsonObject employee = obj.get("employee").getAsJsonObject();
 				if (employee.has("employee")) {
 					// temporary solution
