@@ -18,7 +18,7 @@ public abstract class BaseEntity {
 	public String type;
 
 	@Nullable
-	@SerializedName("error")
+	@SerializedName("errors")
 	public List<LiveTexError> error;
 
 	public BaseEntity() {

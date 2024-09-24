@@ -12,7 +12,8 @@ public final class Employee implements Creator {
 	public String position;
 	@Nullable
 	public String avatarUrl;
-	// null means no feedback done.
+	// Old (2 scores) rating system. null means no feedback done.
+	@Deprecated
 	@Nullable
 	public String rating;
 }
