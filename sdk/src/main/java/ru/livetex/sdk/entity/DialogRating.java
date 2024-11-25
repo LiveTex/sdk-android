@@ -12,4 +12,12 @@ public class DialogRating {
 	@Nullable
 	public DialogRatingData isSet;
 
+	@Nullable
+	public Boolean commentEnabled;
+
+	@Nullable
+	public String textBefore;
+
+	@Nullable
+	public String textAfter;
 }
