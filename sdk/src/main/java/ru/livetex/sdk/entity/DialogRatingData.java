@@ -1,6 +1,7 @@
 package ru.livetex.sdk.entity;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class DialogRatingData {
 	@NonNull
@@ -11,8 +12,12 @@ public class DialogRatingData {
 	// doublePoint: "0" | "1"
 	public String value;
 
-	public DialogRatingData(@NonNull DialogRatingType type, @NonNull String value) {
+	@Nullable
+	public String comment;
+
+	public DialogRatingData(@NonNull DialogRatingType type, @NonNull String value, @Nullable String comment) {
 		this.type = type;
 		this.value = value;
+		this.comment = comment;
 	}
 }
