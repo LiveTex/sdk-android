@@ -27,6 +27,13 @@ public final class RatingEvent extends BaseEntity {
 	}
 
 	/**
+	 * old system
+	 */
+	public static RatingEvent createEvent2point(boolean isPositiveFeedback, @Nullable String comment) {
+		return new RatingEvent(new DialogRatingData(DialogRatingType.DOUBLE_POINT, isPositiveFeedback ? "1" : "0", comment));
+	}
+
+	/**
 	 * new system
 	 * @param rating from 1 to 5
 	 */
