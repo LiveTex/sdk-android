@@ -190,8 +190,8 @@ public class LiveTexMessagesHandler {
 	/**
 	 * Send feedback about dialog quality. Uses old 2points rating system
 	 */
-	public void sendRatingEvent(boolean isPositiveFeedback) {
-		RatingEvent event = RatingEvent.createEvent2point(isPositiveFeedback);
+	public void sendRatingEvent(boolean isPositiveFeedback, @Nullable String comment) {
+		RatingEvent event = RatingEvent.createEvent2point(isPositiveFeedback, comment);
 		String json = EntityMapper.gson.toJson(event);
 		sendJson(json);
 	}
@@ -201,8 +201,8 @@ public class LiveTexMessagesHandler {
 	 *
 	 * @param rating - from 1 to 5
 	 */
-	public void sendRatingEvent(short rating) {
-		RatingEvent event = RatingEvent.createEvent5points(rating);
+	public void sendRatingEvent(short rating, @Nullable String comment) {
+		RatingEvent event = RatingEvent.createEvent5points(rating, comment);
 		String json = EntityMapper.gson.toJson(event);
 		sendJson(json);
 	}
